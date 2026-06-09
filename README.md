@@ -23,10 +23,26 @@ typescript/
   ...
 ```
 
-Además, el repositorio publica ramas remotas por clase:
+## Ramas por clase (estilo Platzi)
 
-- `clase-XX-inicio`
-- `clase-XX-final`
+Además de las carpetas, cada clase se publica como una **rama aislada**: al hacer
+checkout solo verás el contenido de esa clase (Python y TypeScript), no las 18.
+
+- `clase-XX-inicio`: punto de partida para resolver en vivo.
+- `clase-XX-final`: solución completa de la clase.
+
+```bash
+git fetch origin
+git checkout clase-01-inicio   # solo verás python/clase-01 y typescript/clase-01
+```
+
+La rama `main` contiene el curso completo (todas las clases) y el generador.
+Para reconstruir las ramas desde el contenido de `main`:
+
+```bash
+git switch --detach
+python scripts/build_branches.py --push
+```
 
 ## Configuración común
 
