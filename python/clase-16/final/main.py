@@ -1,9 +1,11 @@
-"""Batch API: preparar muchas solicitudes asincrónicas."""
+"""Batch API: crear batch, consultar estado y procesar resultados cuando termine."""
 
 import os
 from anthropic import Anthropic
+from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
+from anthropic.types.messages.batch_create_params import Request
 
-MODEL = "claude-3-5-sonnet-latest"
+MODEL = "claude-sonnet-4-6"
 
 
 def main() -> None:
@@ -13,16 +15,25 @@ def main() -> None:
 
     client = Anthropic(api_key=api_key)
     batch = client.messages.batches.create(requests=[
-        {
-            "custom_id": "resumen-001",
-            "params": {
-                "model": MODEL,
-                "max_tokens": 120,
-                "messages": [{"role": "user", "content": "Resume qué es Claude API."}],
-            },
-        }
+        Request(
+            custom_id="invoice-001",
+            params=MessageCreateParamsNonStreaming(
+                model=MODEL,
+                max_tokens=500,
+                messages=[{"role": "user", "content": "Resume esta factura de ejemplo."}],
+            ),
+        )
     ])
-    print(f"Batch creado: {batch.id} con estado {batch.processing_status}")
+    print(batch.id, batch.processing_status)
+
+    batch_status = client.messages.batches.retrieve(batch.id)
+    print(batch_status.processing_status)
+
+    if batch_status.processing_status == "ended":
+        for result in client.messages.batches.results(batch.id):
+            print(result.custom_id, result.result.type)
+    else:
+        print("El batch todavía no termina. Vuelve a consultar más tarde antes de leer results.")
 
 
 if __name__ == "__main__":

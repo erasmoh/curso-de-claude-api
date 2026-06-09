@@ -1,26 +1,38 @@
-"""Seguridad mínima para agentes con herramientas."""
+"""Runner seguro para agentes con allowlist, errores y límite de pasos."""
 
 from __future__ import annotations
 
-from urllib.parse import urlparse
+from collections.abc import Callable
 
-ALLOWED_DOMAINS = {"docs.anthropic.com", "www.anthropic.com"}
+MAX_STEPS = 5
 
 
-def validate_url(url: str) -> str:
-    """Acepta solo HTTPS y dominios permitidos para reducir SSRF y abuso."""
-    parsed = urlparse(url)
-    if parsed.scheme != "https":
-        raise ValueError("Solo se permite HTTPS.")
-    if parsed.netloc not in ALLOWED_DOMAINS:
-        raise ValueError(f"Dominio no permitido: {parsed.netloc}")
-    return url
+def get_weather(city: str) -> str:
+    return f"Clima en {city}: lluvia ligera."
+
+
+available_tools: dict[str, Callable[..., str]] = {"get_weather": get_weather}
+
+
+def run_tool(name: str, args: dict[str, object]) -> str:
+    if name not in available_tools:
+        return "Error: herramienta no permitida."
+
+    try:
+        return str(available_tools[name](**args))
+    except Exception as error:
+        return f"Error ejecutando {name}: {error}"
 
 
 def main() -> None:
-    safe_url = validate_url("https://docs.anthropic.com/en/api/messages")
-    print(f"URL validada para la herramienta fetch: {safe_url}")
-    print("En el agente real, combina esta validación con MAX_STEPS y timeouts.")
+    for step in range(MAX_STEPS):
+        if step == MAX_STEPS - 1:
+            print("El agente alcanzó el máximo de pasos permitidos.")
+            break
+        print(run_tool("get_weather", {"city": "Bogotá"}))
+        break
+
+    print("Reglas: allowlist de herramientas, validación de argumentos, max steps y nunca ejecutar código arbitrario.")
 
 
 if __name__ == "__main__":

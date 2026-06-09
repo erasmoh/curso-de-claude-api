@@ -1,19 +1,29 @@
-"""Gestión básica de contexto para conversaciones largas."""
+"""Estrategias de contexto: truncado, resumen y uso de tokens."""
 
 from __future__ import annotations
 
 import os
 from anthropic import Anthropic
 
-MODEL = "claude-3-5-sonnet-latest"
-MAX_HISTORY_MESSAGES = 6
+MODEL = "claude-sonnet-4-6"
+MAX_HISTORY_MESSAGES = 12
 
 
-def trim_history(messages: list[dict[str, str]], max_messages: int = MAX_HISTORY_MESSAGES) -> list[dict[str, str]]:
-    """Conserva los mensajes más recientes para controlar costo y contexto."""
-    if len(messages) <= max_messages:
-        return messages
+def keep_recent_messages(messages: list[dict[str, str]], max_messages: int = MAX_HISTORY_MESSAGES) -> list[dict[str, str]]:
+    """Conserva solo los últimos turnos para controlar latencia, contexto y costo."""
     return messages[-max_messages:]
+
+
+def summarize_history(client: Anthropic, messages: list[dict[str, str]]) -> str:
+    """Resume la conversación cuando ya no conviene enviar todo el historial."""
+    transcript = "\n".join(f"{message['role']}: {message['content']}" for message in messages)
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=400,
+        system="Resume una conversación para preservar contexto importante.",
+        messages=[{"role": "user", "content": transcript}],
+    )
+    return "".join(block.text for block in response.content if block.type == "text")
 
 
 def main() -> None:
@@ -21,20 +31,28 @@ def main() -> None:
     if not api_key:
         raise RuntimeError("Define ANTHROPIC_API_KEY.")
 
-    history = [{"role": "user", "content": f"Mensaje antiguo #{index}"} for index in range(10)]
-    history.append({"role": "user", "content": "Resume qué decisiones importantes recuerdas."})
-
     client = Anthropic(api_key=api_key)
+    messages = [
+        {"role": "user", "content": "Estoy creando un chatbot para soporte técnico."},
+        {"role": "assistant", "content": "Perfecto. Lo enfocaremos en respuestas claras."},
+        {"role": "user", "content": "El bot debe escalar casos urgentes."},
+    ]
+
+    summary = summarize_history(client, messages)
+    controlled_history = [{"role": "user", "content": f"Resumen previo: {summary}"}]
+    controlled_history.extend(keep_recent_messages(messages))
+    controlled_history.append({"role": "user", "content": "¿Qué decisión importante debo recordar?"})
+
     response = client.messages.create(
         model=MODEL,
-        max_tokens=250,
-        system="Si falta contexto, dilo explícitamente y pide más información.",
-        messages=trim_history(history),
+        max_tokens=500,
+        messages=controlled_history,
     )
 
-    for block in response.content:
-        if block.type == "text":
-            print(block.text)
+    print("Respuesta:")
+    print("".join(block.text for block in response.content if block.type == "text"))
+    print("\nUso de tokens:")
+    print({"input_tokens": response.usage.input_tokens, "output_tokens": response.usage.output_tokens})
 
 
 if __name__ == "__main__":

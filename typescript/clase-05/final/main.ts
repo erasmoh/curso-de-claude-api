@@ -6,8 +6,8 @@ import { readFile, writeFile } from "node:fs/promises";
 
 export {};
 
-const MODEL = "claude-3-5-sonnet-latest";
-const HISTORY_PATH = "chat_history.json";
+const MODEL = "claude-sonnet-4-6";
+const HISTORY_PATH = "history.json";
 
 async function loadHistory(): Promise<MessageParam[]> {
   try {
@@ -21,32 +21,47 @@ async function saveHistory(messages: MessageParam[]): Promise<void> {
   await writeFile(HISTORY_PATH, JSON.stringify(messages, null, 2));
 }
 
-const apiKey = process.env.ANTHROPIC_API_KEY;
-if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");
-
-const client = new Anthropic({ apiKey });
-const rl = createInterface({ input, output });
-const messages = await loadHistory();
-console.log("Chatbot listo. Escribe 'salir' para terminar.");
-
-while (true) {
-  const userText = (await rl.question("\nTú: ")).trim();
-  if (userText.toLowerCase() === "salir") break;
-
-  messages.push({ role: "user", content: userText });
+async function streamClaudeResponse(client: Anthropic, messages: MessageParam[]): Promise<string> {
   let assistantText = "";
-  process.stdout.write("Claude: ");
-
-  const stream = client.messages.stream({ model: MODEL, max_tokens: 600, messages: messages.slice(-12) });
+  const stream = client.messages.stream({ model: MODEL, max_tokens: 700, messages: messages.slice(-12) });
   stream.on("text", (text) => {
     assistantText += text;
     process.stdout.write(text);
   });
   await stream.finalMessage();
   process.stdout.write("\n");
+  return assistantText;
+}
 
-  messages.push({ role: "assistant", content: assistantText });
-  await saveHistory(messages);
+const apiKey = process.env.ANTHROPIC_API_KEY;
+if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");
+
+const client = new Anthropic({ apiKey });
+const rl = createInterface({ input, output });
+let messages = await loadHistory();
+console.log("Chatbot listo. Comandos: /salir para terminar, /reset para borrar historial.");
+
+while (true) {
+  const userInput = (await rl.question("\nTú: ")).trim();
+  if (userInput === "/salir") break;
+  if (userInput === "/reset") {
+    messages = [];
+    await saveHistory(messages);
+    console.log("Historial reiniciado.");
+    continue;
+  }
+  if (!userInput) continue;
+
+  messages.push({ role: "user", content: userInput });
+  process.stdout.write("Claude: ");
+  try {
+    const assistantText = await streamClaudeResponse(client, messages);
+    messages.push({ role: "assistant", content: assistantText });
+    await saveHistory(messages);
+  } catch (error) {
+    messages.pop();
+    console.log(`Error llamando a Claude: ${error instanceof Error ? error.message : "desconocido"}`);
+  }
 }
 
 rl.close();

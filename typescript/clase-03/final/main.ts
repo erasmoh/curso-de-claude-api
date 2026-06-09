@@ -3,30 +3,37 @@ import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
 
 export {};
 
-const MODEL = "claude-3-5-sonnet-latest";
-const MAX_HISTORY_MESSAGES = 6;
+const MODEL = "claude-sonnet-4-6";
+const MAX_HISTORY_MESSAGES = 12;
 
-function trimHistory(messages: MessageParam[]): MessageParam[] {
-  return messages.length <= MAX_HISTORY_MESSAGES ? messages : messages.slice(-MAX_HISTORY_MESSAGES);
+function keepRecentMessages(messages: MessageParam[], maxMessages = MAX_HISTORY_MESSAGES): MessageParam[] {
+  return messages.slice(-maxMessages);
+}
+
+async function summarizeHistory(client: Anthropic, messages: MessageParam[]): Promise<string> {
+  const transcript = messages.map((message) => `${message.role}: ${message.content}`).join("\n");
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: 400,
+    system: "Resume una conversación para preservar contexto importante.",
+    messages: [{ role: "user", content: transcript }],
+  });
+  return response.content.filter((block) => block.type === "text").map((block) => block.text).join("");
 }
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");
 
-const history: MessageParam[] = Array.from({ length: 10 }, (_, index) => ({
-  role: "user",
-  content: `Mensaje antiguo #${index}`,
-}));
-history.push({ role: "user", content: "Resume qué decisiones importantes recuerdas." });
-
 const client = new Anthropic({ apiKey });
-const response = await client.messages.create({
-  model: MODEL,
-  max_tokens: 250,
-  system: "Si falta contexto, dilo explícitamente y pide más información.",
-  messages: trimHistory(history),
-});
+const messages: MessageParam[] = [
+  { role: "user", content: "Estoy creando un chatbot para soporte técnico." },
+  { role: "assistant", content: "Perfecto. Lo enfocaremos en respuestas claras." },
+  { role: "user", content: "El bot debe escalar casos urgentes." },
+];
 
-for (const block of response.content) {
-  if (block.type === "text") console.log(block.text);
-}
+const summary = await summarizeHistory(client, messages);
+const controlledHistory: MessageParam[] = [{ role: "user", content: `Resumen previo: ${summary}` }, ...keepRecentMessages(messages), { role: "user", content: "¿Qué decisión importante debo recordar?" }];
+const response = await client.messages.create({ model: MODEL, max_tokens: 500, messages: controlledHistory });
+
+console.log(response.content.filter((block) => block.type === "text").map((block) => block.text).join(""));
+console.log({ input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens });

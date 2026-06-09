@@ -1,16 +1,28 @@
-"""Prompt engineering para extraer datos de documentos ambiguos."""
+"""Prompt engineering para extracción precisa de datos de facturas."""
 
 import os
 from anthropic import Anthropic
 
-MODEL = "claude-3-5-sonnet-latest"
+MODEL = "claude-sonnet-4-6"
 
 EXTRACTION_PROMPT = """
-Extrae datos del texto usando estas reglas:
-- Si un campo no aparece, usa null.
-- No inventes fechas, totales ni nombres.
-- Devuelve JSON válido con provider, date, total y currency.
-- Si el documento es ambiguo, agrega una lista warnings.
+Extrae datos de la factura adjunta.
+Responde únicamente JSON válido.
+No inventes datos. Si un campo no aparece, usa null.
+Normaliza montos como números, sin símbolos de moneda.
+La moneda debe ser un código ISO si puedes inferirlo.
+
+Campos requeridos:
+- provider
+- date
+- currency
+- total
+- items: description, quantity, unit_price, total
+
+Ejemplos de reglas:
+- Si la factura no muestra moneda explícita, usa null.
+- Si hay impuestos separados, inclúyelos en items solo si aparecen como línea propia.
+- Si no puedes leer un campo, usa null en lugar de adivinar.
 """
 
 
@@ -19,11 +31,11 @@ def main() -> None:
     if not api_key:
         raise RuntimeError("Define ANTHROPIC_API_KEY.")
 
-    document_text = "Factura ACME emitida el 2026-05-01. Total: USD 129.90"
+    document_text = "Factura ACME emitida el 2026-05-01. Servicio: soporte, total: USD 129.90"
     client = Anthropic(api_key=api_key)
     response = client.messages.create(
         model=MODEL,
-        max_tokens=350,
+        max_tokens=700,
         system=EXTRACTION_PROMPT,
         messages=[{"role": "user", "content": document_text}],
     )

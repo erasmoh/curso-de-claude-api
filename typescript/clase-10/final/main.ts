@@ -18,7 +18,7 @@ const weatherTool: ToolUnion = {
 
 const client = new Anthropic({ apiKey });
 const response = await client.messages.create({
-  model: "claude-3-5-sonnet-latest",
+  model: "claude-sonnet-4-6",
   max_tokens: 400,
   tools: [weatherTool],
   messages: [{ role: "user", content: "¿Cómo está el clima en Guatemala?" }],

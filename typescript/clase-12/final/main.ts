@@ -79,7 +79,7 @@ const client = new Anthropic({ apiKey });
 const messages: MessageParam[] = [{ role: "user", content: "Calcula (128 * 7) + 34 y explica el resultado." }];
 
 for (let step = 0; step < MAX_STEPS; step += 1) {
-  const response = await client.messages.create({ model: "claude-3-5-sonnet-latest", max_tokens: 500, tools: [tool], messages });
+  const response = await client.messages.create({ model: "claude-sonnet-4-6", max_tokens: 500, tools: [tool], messages });
   messages.push({ role: "assistant", content: response.content });
   const toolResults: ToolResultBlockParam[] = [];
 

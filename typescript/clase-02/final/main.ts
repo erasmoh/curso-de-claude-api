@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 export {};
 
-const MODEL = "claude-3-5-sonnet-latest";
+const MODEL = "claude-sonnet-4-6";
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");

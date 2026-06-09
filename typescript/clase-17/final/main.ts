@@ -1,29 +1,42 @@
-import Anthropic, { RateLimitError } from "@anthropic-ai/sdk";
+import Anthropic from "@anthropic-ai/sdk";
+import type { Message } from "@anthropic-ai/sdk/resources/messages";
 
 export {};
 
-function logEvent(event: string, fields: Record<string, unknown>): void {
-  console.log(JSON.stringify({ event, ...fields }));
+const MODEL = "claude-sonnet-4-6";
+
+async function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  for (let attempt = 0; attempt < maxRetries; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      const waitMs = (2 ** attempt + Math.random()) * 1000;
+      console.log(`Error: ${error}. Reintentando en ${(waitMs / 1000).toFixed(2)}s`);
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+  throw new Error("Se agotaron los reintentos");
+}
+
+async function safeClaudeCall(client: Anthropic): Promise<Message> {
+  const start = performance.now();
+  const response = await retryWithBackoff(() => client.messages.create({
+    model: MODEL,
+    max_tokens: 200,
+    messages: [{ role: "user", content: "Dame un tip de observabilidad." }],
+  }));
+  console.log(JSON.stringify({
+    model: response.model,
+    input_tokens: response.usage.input_tokens,
+    output_tokens: response.usage.output_tokens,
+    elapsed_ms: Math.round(performance.now() - start),
+    status: "success",
+  }));
+  return response;
 }
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");
 
-const client = new Anthropic({ apiKey });
-for (let attempt = 1; attempt <= 3; attempt += 1) {
-  try {
-    const response = await client.messages.create({
-      model: "claude-3-5-sonnet-latest",
-      max_tokens: 200,
-      messages: [{ role: "user", content: "Dame un tip de observabilidad." }],
-    });
-    logEvent("claude_response", { attempt, usage: response.usage });
-    console.log(response.content.filter((block) => block.type === "text").map((block) => block.text).join(""));
-    break;
-  } catch (error) {
-    if (!(error instanceof RateLimitError)) throw error;
-    const waitMs = 1000 * 2 ** attempt;
-    logEvent("rate_limited", { attempt, waitMs });
-    await new Promise((resolve) => setTimeout(resolve, waitMs));
-  }
-}
+const response = await safeClaudeCall(new Anthropic({ apiKey }));
+console.log(response.content.filter((block) => block.type === "text").map((block) => block.text).join(""));
