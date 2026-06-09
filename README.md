@@ -28,7 +28,7 @@ Además, el repositorio publica ramas remotas por clase:
 - `clase-XX-inicio`
 - `clase-XX-final`
 
-## Configuración
+## Configuración común
 
 ```bash
 cp .env.example .env
@@ -39,10 +39,32 @@ Nunca subas tu API key al repositorio. Usa variables de entorno en local, GitHub
 
 ## Python
 
+La carpeta `python/` es la ruta principal del curso. Úsala si quieres seguir las clases exactamente como están planteadas en el temario.
+
+### Requerimientos
+
+- Python 3.11 o superior.
+- `pip` y `venv`.
+- Una API key de Anthropic configurada como `ANTHROPIC_API_KEY`.
+- Conocimiento intermedio de Python: funciones, clases, errores, archivos y consumo de APIs.
+
+### Instalar dependencias
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
+```
+
+### Ejecutar una clase
+
+Cada clase tiene un punto de partida y una solución:
+
+```bash
+# Punto de partida para resolver en vivo
+python python/clase-01/inicio/main.py
+
+# Solución final de la clase
 python python/clase-01/final/main.py
 ```
 
@@ -54,12 +76,46 @@ python -m compileall python
 
 ## TypeScript
 
+La carpeta `typescript/` es la ruta alternativa para comparar cómo se implementan los mismos conceptos con Node.js y TypeScript.
+
+### Requerimientos
+
+- Node.js 20 o superior.
+- npm 10 o superior.
+- Una API key de Anthropic configurada como `ANTHROPIC_API_KEY`.
+- Conocimiento básico/intermedio de TypeScript: módulos ES, async/await, tipos y manejo de errores.
+
+### Instalar dependencias
+
 ```bash
 cd typescript
 npm install
+```
+
+### Ejecutar una clase
+
+Los scripts siguen el patrón `clase:XX:inicio` y `clase:XX:final`:
+
+```bash
+# Punto de partida para resolver en vivo
+npm run clase:01:inicio
+
+# Solución final de la clase
 npm run clase:01:final
+```
+
+Validación rápida:
+
+```bash
 npm run typecheck
 ```
+
+## Cómo elegir entre Python y TypeScript
+
+- Usa **Python** para seguir el curso principal, los proyectos base y la versión que se despliega con FastAPI.
+- Usa **TypeScript** cuando quieras mostrar la alternativa equivalente para estudiantes que trabajan con Node.js.
+- Ambas rutas usan la misma API key y cubren los mismos conceptos por clase.
+- Puedes comparar `python/clase-XX/final/main.py` contra `typescript/clase-XX/final/main.ts` para explicar diferencias de SDK, tipos y estilo.
 
 ## Mapa del curso
 
