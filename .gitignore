@@ -1,0 +1,10 @@
+.env
+.venv/
+*.egg-info/
+__pycache__/
+*.pyc
+node_modules/
+dist/
+chat_history.json
+*.log
+.DS_Store
