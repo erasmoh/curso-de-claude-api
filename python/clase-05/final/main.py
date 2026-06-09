@@ -1,4 +1,4 @@
-"""Chatbot de terminal con historial persistente y streaming."""
+"""Chatbot de terminal con historial persistente, comandos, errores y streaming."""
 
 from __future__ import annotations
 
@@ -7,18 +7,28 @@ import os
 from pathlib import Path
 from anthropic import Anthropic
 
-MODEL = "claude-3-5-sonnet-latest"
-HISTORY_PATH = Path("chat_history.json")
+MODEL = "claude-sonnet-4-6"
+HISTORY_PATH = Path("history.json")
 
 
 def load_history() -> list[dict[str, str]]:
-    if not HISTORY_PATH.exists():
-        return []
-    return json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+    if HISTORY_PATH.exists():
+        return json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+    return []
 
 
 def save_history(messages: list[dict[str, str]]) -> None:
     HISTORY_PATH.write_text(json.dumps(messages, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def stream_claude_response(client: Anthropic, messages: list[dict[str, str]]) -> str:
+    assistant_text = ""
+    with client.messages.stream(model=MODEL, max_tokens=700, messages=messages[-12:]) as stream:
+        for text in stream.text_stream:
+            print(text, end="", flush=True)
+            assistant_text += text
+    print()
+    return assistant_text
 
 
 def main() -> None:
@@ -28,21 +38,30 @@ def main() -> None:
 
     client = Anthropic(api_key=api_key)
     messages = load_history()
-    print("Chatbot listo. Escribe 'salir' para terminar.")
+    print("Chatbot listo. Comandos: /salir para terminar, /reset para borrar historial.")
 
     while True:
-        user_text = input("\nTú: ").strip()
-        if user_text.lower() == "salir":
-            break
+        user_input = input("\nTú: ").strip()
 
-        messages.append({"role": "user", "content": user_text})
-        assistant_text = ""
+        if user_input == "/salir":
+            break
+        if user_input == "/reset":
+            messages = []
+            save_history(messages)
+            print("Historial reiniciado.")
+            continue
+        if not user_input:
+            continue
+
+        messages.append({"role": "user", "content": user_input})
         print("Claude: ", end="", flush=True)
-        with client.messages.stream(model=MODEL, max_tokens=600, messages=messages[-12:]) as stream:
-            for text in stream.text_stream:
-                assistant_text += text
-                print(text, end="", flush=True)
-        print()
+
+        try:
+            assistant_text = stream_claude_response(client, messages)
+        except Exception as error:
+            messages.pop()
+            print(f"Error llamando a Claude: {error}")
+            continue
 
         messages.append({"role": "assistant", "content": assistant_text})
         save_history(messages)

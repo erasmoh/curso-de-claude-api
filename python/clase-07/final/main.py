@@ -1,19 +1,35 @@
-"""JSON estructurado con prompt estricto y validación Pydantic."""
+"""JSON estructurado para facturas con prompt estricto y validación Pydantic."""
 
 from __future__ import annotations
 
 import json
 import os
 from anthropic import Anthropic
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-MODEL = "claude-3-5-sonnet-latest"
+MODEL = "claude-sonnet-4-6"
 
 
-class TaskSummary(BaseModel):
-    title: str = Field(description="Título corto de la tarea.")
-    priority: str = Field(description="low, medium o high.")
-    next_step: str = Field(description="Siguiente acción concreta.")
+class InvoiceItem(BaseModel):
+    description: str
+    quantity: float | None = None
+    unit_price: float | None = None
+    total: float
+
+
+class InvoiceData(BaseModel):
+    provider: str
+    date: str
+    currency: str
+    total: float
+    items: list[InvoiceItem]
+
+
+PROMPT = """
+Extrae la información de la factura.
+Responde únicamente JSON válido.
+No agregues explicación fuera del JSON.
+"""
 
 
 def main() -> None:
@@ -21,17 +37,21 @@ def main() -> None:
     if not api_key:
         raise RuntimeError("Define ANTHROPIC_API_KEY.")
 
+    invoice_text = """
+    Factura de ACME S.A. emitida el 2026-05-01.
+    2 horas de consultoría a 50 USD cada una. Total: USD 100.
+    """
     client = Anthropic(api_key=api_key)
     response = client.messages.create(
         model=MODEL,
-        max_tokens=300,
-        system="Responde únicamente JSON válido, sin Markdown ni texto extra.",
-        messages=[{"role": "user", "content": "Convierte esta idea en tarea: lanzar chatbot con memoria."}],
+        max_tokens=500,
+        system=PROMPT,
+        messages=[{"role": "user", "content": invoice_text}],
     )
 
     raw_text = "".join(block.text for block in response.content if block.type == "text")
-    parsed = TaskSummary.model_validate(json.loads(raw_text))
-    print(parsed.model_dump_json(indent=2))
+    invoice = InvoiceData.model_validate(json.loads(raw_text))
+    print(invoice.model_dump_json(indent=2))
 
 
 if __name__ == "__main__":

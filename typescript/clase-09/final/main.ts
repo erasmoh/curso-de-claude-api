@@ -1,31 +1,40 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { readFile } from "node:fs/promises";
-import { z } from "zod";
+import { readFile, writeFile } from "node:fs/promises";
+import { InvoiceData } from "./schemas.js";
 
 export {};
 
-const Invoice = z.object({
-  provider: z.string().nullable(),
-  date: z.string().nullable(),
-  total: z.number().nullable(),
-  currency: z.string().nullable(),
-  items: z.array(z.object({ description: z.string(), quantity: z.number(), unit_price: z.number() })),
-});
+const MODEL = "claude-sonnet-4-6";
+
+function getPdfPath(): string {
+  const pdfPath = process.argv[2];
+  if (!pdfPath) throw new Error("Uso: npm run clase:09:final -- ./samples/factura_001.pdf");
+  return pdfPath;
+}
+
+async function extractInvoice(client: Anthropic, pdfPath: string): Promise<unknown> {
+  const pdfData = (await readFile(pdfPath)).toString("base64");
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: 1000,
+    system: "Extrae la factura como JSON válido con provider, date, total, currency e items.",
+    messages: [{ role: "user", content: [
+      { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfData } },
+      { type: "text", text: "Devuelve únicamente JSON válido. No uses Markdown." },
+    ] }],
+  });
+  const rawText = response.content.filter((block) => block.type === "text").map((block) => block.text).join("");
+  return InvoiceData.parse(JSON.parse(rawText));
+}
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");
 
-const pdfData = (await readFile("invoice.pdf")).toString("base64");
-const client = new Anthropic({ apiKey });
-const response = await client.messages.create({
-  model: "claude-3-5-sonnet-latest",
-  max_tokens: 900,
-  system: "Extrae factura como JSON válido. No agregues Markdown.",
-  messages: [{ role: "user", content: [
-    { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfData } },
-    { type: "text", text: "Campos: provider, date, total, currency, items[]." },
-  ] }],
-});
-
-const rawText = response.content.filter((block) => block.type === "text").map((block) => block.text).join("");
-console.log(JSON.stringify(Invoice.parse(JSON.parse(rawText)), null, 2));
+try {
+  const invoice = await extractInvoice(new Anthropic({ apiKey }), getPdfPath());
+  await writeFile("output.json", JSON.stringify(invoice, null, 2));
+  console.log("Factura extraída en output.json");
+} catch (error) {
+  console.log(`La factura no pudo procesarse: ${error instanceof Error ? error.message : "error desconocido"}`);
+  process.exitCode = 1;
+}

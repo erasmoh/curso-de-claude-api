@@ -1,14 +1,35 @@
 export {};
 
-const ALLOWED_DOMAINS = new Set(["docs.anthropic.com", "www.anthropic.com"]);
+const MAX_STEPS = 5;
 
-function validateUrl(rawUrl: string): string {
-  const url = new URL(rawUrl);
-  if (url.protocol !== "https:") throw new Error("Solo se permite HTTPS.");
-  if (!ALLOWED_DOMAINS.has(url.hostname)) throw new Error(`Dominio no permitido: ${url.hostname}`);
-  return url.toString();
+function getWeather(city: string): string {
+  return `Clima en ${city}: lluvia ligera.`;
 }
 
-const safeUrl = validateUrl("https://docs.anthropic.com/en/api/messages");
-console.log(`URL validada para la herramienta fetch: ${safeUrl}`);
-console.log("En el agente real, combina esta validación con MAX_STEPS y timeouts.");
+const availableTools = {
+  get_weather: (args: Record<string, unknown>): string => {
+    const city = typeof args.city === "string" ? args.city : "ciudad desconocida";
+    return getWeather(city);
+  },
+};
+
+function runTool(name: string, args: Record<string, unknown>): string {
+  if (name !== "get_weather") return "Error: herramienta no permitida.";
+
+  try {
+    return availableTools.get_weather(args);
+  } catch (error) {
+    return `Error ejecutando ${name}: ${error instanceof Error ? error.message : "desconocido"}`;
+  }
+}
+
+for (let step = 0; step < MAX_STEPS; step += 1) {
+  if (step === MAX_STEPS - 1) {
+    console.log("El agente alcanzó el máximo de pasos permitidos.");
+    break;
+  }
+  console.log(runTool("get_weather", { city: "Bogotá" }));
+  break;
+}
+
+console.log("Reglas: allowlist de herramientas, validación de argumentos, max steps y nunca ejecutar código arbitrario.");

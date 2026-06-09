@@ -7,7 +7,7 @@ if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");
 
 const client = new Anthropic({ apiKey });
 const stream = client.messages.stream({
-  model: "claude-3-5-sonnet-latest",
+  model: "claude-sonnet-4-6",
   max_tokens: 500,
   messages: [{ role: "user", content: "Explícame streaming en Claude API con una analogía." }],
 });

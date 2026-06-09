@@ -37,6 +37,14 @@ export ANTHROPIC_API_KEY="tu_api_key"
 
 Nunca subas tu API key al repositorio. Usa variables de entorno en local, GitHub Actions, Railway o tu plataforma de deploy.
 
+Modelo usado en los ejemplos del guión:
+
+```text
+claude-sonnet-4-6
+```
+
+Revisa la documentación de Anthropic antes de grabar, porque los nombres de modelos pueden cambiar con el tiempo.
+
 ## Python
 
 La carpeta `python/` es la ruta principal del curso. Úsala si quieres seguir las clases exactamente como están planteadas en el temario.

@@ -7,7 +7,7 @@ import operator
 import os
 from anthropic import Anthropic
 
-MODEL = "claude-3-5-sonnet-latest"
+MODEL = "claude-sonnet-4-6"
 MAX_STEPS = 4
 OPERATORS = {
     ast.Add: operator.add,

@@ -7,7 +7,7 @@
 
 export {};
 
-const MODEL = "claude-3-5-sonnet-latest";
+const MODEL = "claude-sonnet-4-6";
 
 async function main(): Promise<void> {
   const apiKey = process.env.ANTHROPIC_API_KEY;

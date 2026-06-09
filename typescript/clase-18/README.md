@@ -1,22 +1,21 @@
-# Clase 18: Deploy tu app con FastAPI + Railway
+# Clase 18: Deploy tu app con Fastify + Railway
 
-**Objetivo:** Exponer el chatbot como API REST lista para Railway.
+**Objetivo:** mostrar la alternativa TypeScript de la API REST final con autenticación básica y variables seguras.
 
 ## Estructura
 
 - `inicio/`: punto de partida para resolver durante la clase.
-- `final/`: solución comentada y lista para comparar.
+- `final/`: solución con `/health`, `/chat`, header `x-api-key` y `APP_API_KEY`.
 
-## Ejecución sugerida
+## Ejecución local
 
 ```bash
-cp .env.example .env
 export ANTHROPIC_API_KEY="tu_api_key"
-npm --prefix typescript run clase:18:final
+export APP_API_KEY="clave_para_tu_app"
+npm run clase:18:final
 ```
 
-## Nota docente
+## Railway
 
-Recorre primero `inicio/main.ts` y deja que el estudiante complete los TODOs.
-Después compara contra `final/main.ts` para discutir decisiones de diseño,
-manejo de errores y seguridad.
+Configura `ANTHROPIC_API_KEY`, `APP_API_KEY` y `PORT` como variables de entorno.
+El comando de inicio puede usar el script de esta clase o un entrypoint dedicado para producción.

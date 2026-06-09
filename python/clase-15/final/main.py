@@ -3,7 +3,7 @@
 import os
 from anthropic import Anthropic
 
-MODEL = "claude-3-5-sonnet-latest"
+MODEL = "claude-sonnet-4-6"
 
 
 def main() -> None:

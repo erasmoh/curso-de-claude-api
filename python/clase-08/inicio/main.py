@@ -7,7 +7,7 @@ TODOs para que el estudiante escriba el código durante la explicación.
 import os
 
 
-MODEL = "claude-3-5-sonnet-latest"
+MODEL = "claude-sonnet-4-6"
 
 
 def main() -> None:
