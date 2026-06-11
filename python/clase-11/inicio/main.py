@@ -1,4 +1,4 @@
-"""Clase 11 - inicio: Definir herramientas y manejar tool_result.
+"""Clase 11 - inicio: Loop agentico: razonar → actuar → observar.
 
 Este archivo es el punto de partida de la clase. Está lleno de pistas y
 TODOs para que el estudiante escriba el código durante la explicación.

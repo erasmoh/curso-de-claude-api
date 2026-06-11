@@ -1,6 +1,6 @@
-# Clase 12: Loop agentico: razonar → actuar → observar
+# Clase 12: Manejo de errores y seguridad en agentes
 
-**Objetivo:** Implementar el ciclo while de un agente con herramientas.
+**Objetivo:** Limitar pasos, validar inputs y evitar loops peligrosos.
 
 ## Estructura
 

@@ -1,6 +1,6 @@
-# Clase 13: Manejo de errores y seguridad en agentes
+# Clase 13: Prompt caching: reduce costos hasta un 90%
 
-**Objetivo:** Limitar pasos, validar inputs y evitar loops peligrosos.
+**Objetivo:** Marcar contenido reusable con cache_control.
 
 ## Estructura
 

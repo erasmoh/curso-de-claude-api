@@ -1,4 +1,4 @@
-"""Clase 09 - inicio: Construye un extractor de facturas en PDF.
+"""Clase 09 - inicio: Tool use: cómo Claude llama funciones externas.
 
 Este archivo es el punto de partida de la clase. Está lleno de pistas y
 TODOs para que el estudiante escriba el código durante la explicación.

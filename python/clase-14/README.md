@@ -1,6 +1,6 @@
-# Clase 14: Construye un agente de búsqueda y resumen web
+# Clase 14: Batch API para procesar miles de requests
 
-**Objetivo:** Investigar una pregunta y responder con fuentes citadas.
+**Objetivo:** Crear batches, consultar estado y leer resultados.
 
 ## Estructura
 

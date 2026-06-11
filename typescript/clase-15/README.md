@@ -1,6 +1,6 @@
-# Clase 15: Prompt caching: reduce costos hasta un 90%
+# Clase 15: Rate limits, reintentos y observabilidad
 
-**Objetivo:** Marcar contenido reusable con cache_control.
+**Objetivo:** Aplicar backoff, logs estructurados y métricas de tokens.
 
 ## Estructura
 

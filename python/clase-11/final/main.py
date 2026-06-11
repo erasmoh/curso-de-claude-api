@@ -1,20 +1,41 @@
-"""Ejecutar herramientas permitidas y responder a Claude con tool_result."""
+"""Loop agentico: razonar, actuar, observar y decidir si termina."""
 
 from __future__ import annotations
 
-import json
+import ast
+import operator
 import os
-from collections.abc import Callable
 from anthropic import Anthropic
 
 MODEL = "claude-sonnet-4-6"
+MAX_STEPS = 4
+OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.USub: operator.neg,
+}
 
 
-def get_weather(city: str) -> dict[str, object]:
-    return {"city": city, "temperature": 18, "condition": "lluvia ligera"}
+def evaluate(node: ast.AST) -> float:
+    if isinstance(node, ast.Expression):
+        return evaluate(node.body)
+    if isinstance(node, ast.Constant) and isinstance(node.value, int | float):
+        return float(node.value)
+    if isinstance(node, ast.BinOp) and type(node.op) in OPERATORS:
+        return OPERATORS[type(node.op)](evaluate(node.left), evaluate(node.right))
+    if isinstance(node, ast.UnaryOp) and type(node.op) in OPERATORS:
+        return OPERATORS[type(node.op)](evaluate(node.operand))
+    raise ValueError("Expresión no permitida.")
 
 
-available_tools: dict[str, Callable[..., dict[str, object]]] = {"get_weather": get_weather}
+def calculator(expression: str) -> str:
+    try:
+        tree = ast.parse(expression, mode="eval")
+        return str(evaluate(tree))
+    except (SyntaxError, ValueError, ZeroDivisionError) as error:
+        return f"Expresión rechazada: {error}"
 
 
 def main() -> None:
@@ -22,28 +43,24 @@ def main() -> None:
     if not api_key:
         raise RuntimeError("Define ANTHROPIC_API_KEY.")
 
-    tools = [{
-        "name": "get_weather",
-        "description": "Obtiene el clima actual de una ciudad.",
-        "input_schema": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]},
-    }]
     client = Anthropic(api_key=api_key)
-    messages = [{"role": "user", "content": "¿Necesito paraguas hoy en Bogotá?"}]
-    response = client.messages.create(model=MODEL, max_tokens=800, tools=tools, messages=messages)
+    messages = [{"role": "user", "content": "Calcula (128 * 7) + 34 y explica el resultado."}]
+    tools = [{"name": "calculator", "description": "Calculadora aritmética.", "input_schema": {
+        "type": "object", "properties": {"expression": {"type": "string"}}, "required": ["expression"]}}]
 
-    messages.append({"role": "assistant", "content": response.content})
-    for block in response.content:
-        if block.type == "tool_use":
-            tool = available_tools[block.name]
-            result = tool(**block.input)
-            messages.append({"role": "user", "content": [{
-                "type": "tool_result",
-                "tool_use_id": block.id,
-                "content": json.dumps(result, ensure_ascii=False),
-            }]})
+    for _step in range(MAX_STEPS):
+        response = client.messages.create(model=MODEL, max_tokens=500, tools=tools, messages=messages)
+        messages.append({"role": "assistant", "content": response.content})
+        tool_results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": calculator(str(block.input["expression"]))})
+        if not tool_results:
+            print("".join(block.text for block in response.content if block.type == "text"))
+            return
+        messages.append({"role": "user", "content": tool_results})
 
-    final = client.messages.create(model=MODEL, max_tokens=500, messages=messages)
-    print("".join(block.text for block in final.content if block.type == "text"))
+    print("El agente alcanzó el límite de pasos.")
 
 
 if __name__ == "__main__":

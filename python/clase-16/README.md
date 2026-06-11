@@ -1,22 +1,21 @@
-# Clase 16: Batch API para procesar miles de requests
+# Clase 16: Deploy tu app con FastAPI + Railway
 
-**Objetivo:** Crear batches, consultar estado y leer resultados.
+**Objetivo:** envolver el chatbot en una API REST con FastAPI, añadir autenticación básica y desplegar en Railway con variables de entorno seguras.
 
 ## Estructura
 
 - `inicio/`: punto de partida para resolver durante la clase.
-- `final/`: solución comentada y lista para comparar.
+- `final/`: solución con `/health`, `/chat`, header `x-api-key` y `APP_API_KEY`.
 
-## Ejecución sugerida
+## Ejecución local
 
 ```bash
-cp .env.example .env
 export ANTHROPIC_API_KEY="tu_api_key"
-python python/clase-16/final/main.py
+export APP_API_KEY="clave_para_tu_app"
+uvicorn python.clase-16.final.main:app --reload
 ```
 
-## Nota docente
+## Railway
 
-Recorre primero `inicio/main.py` y deja que el estudiante complete los TODOs.
-Después compara contra `final/main.py` para discutir decisiones de diseño,
-manejo de errores y seguridad.
+Configura `ANTHROPIC_API_KEY`, `APP_API_KEY` y `PORT` como variables de entorno.
+El comando de inicio sugerido es `uvicorn python.clase-16.final.main:app --host 0.0.0.0 --port $PORT`.

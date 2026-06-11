@@ -1,5 +1,5 @@
 /**
- * Clase 12 - inicio: Loop agentico: razonar → actuar → observar.
+ * Clase 12 - inicio: Manejo de errores y seguridad en agentes.
  *
  * Punto de partida para resolver en vivo. Mantiene comentarios explícitos
  * para que el estudiante entienda qué parte debe completar.

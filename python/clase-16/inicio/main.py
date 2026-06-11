@@ -1,4 +1,4 @@
-"""Clase 16 - inicio: Batch API para procesar miles de requests.
+"""Clase 16 - inicio: Deploy tu app con FastAPI + Railway.
 
 Este archivo es el punto de partida de la clase. Está lleno de pistas y
 TODOs para que el estudiante escriba el código durante la explicación.

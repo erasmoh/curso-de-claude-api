@@ -16,17 +16,28 @@ CLASSES = [
     (6, "Inputs multimedia: imágenes y documentos PDF", "Enviar imágenes y PDFs como bloques image/document."),
     (7, "Outputs estructurados con JSON mode", "Forzar JSON válido y validarlo con Pydantic/Zod."),
     (8, "Prompt engineering para extracción de datos", "Diseñar instrucciones robustas para documentos ambiguos."),
-    (9, "Construye un extractor de facturas en PDF", "Procesar una factura PDF y devolver JSON validado."),
-    (10, "Tool use: cómo Claude llama funciones externas", "Declarar herramientas y detectar bloques tool_use."),
-    (11, "Definir herramientas y manejar tool_result", "Ejecutar una función local y devolver su resultado a Claude."),
-    (12, "Loop agentico: razonar → actuar → observar", "Implementar el ciclo while de un agente con herramientas."),
-    (13, "Manejo de errores y seguridad en agentes", "Limitar pasos, validar inputs y evitar loops peligrosos."),
-    (14, "Construye un agente de búsqueda y resumen web", "Investigar una pregunta y responder con fuentes citadas."),
-    (15, "Prompt caching: reduce costos hasta un 90%", "Marcar contenido reusable con cache_control."),
-    (16, "Batch API para procesar miles de requests", "Crear batches, consultar estado y leer resultados."),
-    (17, "Rate limits, reintentos y observabilidad", "Aplicar backoff, logs estructurados y métricas de tokens."),
-    (18, "Deploy tu app con FastAPI + Railway", "Exponer el chatbot como API REST lista para Railway."),
+    (9, "Tool use: cómo Claude llama funciones externas", "Declarar herramientas y detectar bloques tool_use."),
+    (10, "Definir herramientas y manejar tool_result", "Ejecutar una función local y devolver su resultado a Claude."),
+    (11, "Loop agentico: razonar → actuar → observar", "Implementar el ciclo while de un agente con herramientas."),
+    (12, "Manejo de errores y seguridad en agentes", "Limitar pasos, validar inputs y evitar loops peligrosos."),
+    (13, "Prompt caching: reduce costos hasta un 90%", "Marcar contenido reusable con cache_control."),
+    (14, "Batch API para procesar miles de requests", "Crear batches, consultar estado y leer resultados."),
+    (15, "Rate limits, reintentos y observabilidad", "Aplicar backoff, logs estructurados y métricas de tokens."),
+    (16, "Deploy tu app con FastAPI + Railway", "Exponer el chatbot como API REST lista para Railway."),
 ]
+
+
+# El número de clase (posición en el curso) puede diferir del número con el que
+# se definió el contenido en PY_FINALS / TS_FINALS / *_EXTRA_FILES. Este mapa
+# traduce "número de clase actual" -> "número de contenido original".
+# Se retiraron del curso el antiguo 9 ("extractor de facturas en PDF") y el
+# antiguo 14 ("agente de búsqueda y resumen web"); el resto se recorrió para
+# quedar contiguo (01..16).
+SOURCE_NUMBER = {
+    1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8,
+    9: 10, 10: 11, 11: 12, 12: 13,
+    13: 15, 14: 16, 15: 17, 16: 18,
+}
 
 
 def write(path: str, content: str) -> None:
@@ -1041,37 +1052,8 @@ def chat(payload: ChatRequest, x_api_key: str = Header(default="")) -> ChatRespo
 
 
 PY_EXTRA_FILES = {
-    'python/clase-09/final/schemas.py': '''
-from __future__ import annotations
-
-from pydantic import BaseModel
-
-
-class InvoiceItem(BaseModel):
-    description: str
-    quantity: float | None = None
-    unit_price: float | None = None
-    total: float
-
-
-class InvoiceData(BaseModel):
-    provider: str | None
-    date: str | None
-    currency: str | None
-    total: float | None
-    items: list[InvoiceItem]
-    ''',
-    'python/clase-09/final/samples/README.md': '''
-# Samples
-
-Coloca aquí `factura_001.pdf` o cualquier factura PDF de prueba antes de ejecutar:
-
-```bash
-python python/clase-09/final/main.py python/clase-09/final/samples/factura_001.pdf
-```
-    ''',
-    'python/clase-18/README.md': '''
-# Clase 18: Deploy tu app con FastAPI + Railway
+    'python/clase-16/README.md': '''
+# Clase 16: Deploy tu app con FastAPI + Railway
 
 **Objetivo:** envolver el chatbot en una API REST con FastAPI, añadir autenticación básica y desplegar en Railway con variables de entorno seguras.
 
@@ -1085,13 +1067,13 @@ python python/clase-09/final/main.py python/clase-09/final/samples/factura_001.p
 ```bash
 export ANTHROPIC_API_KEY="tu_api_key"
 export APP_API_KEY="clave_para_tu_app"
-uvicorn python.clase-18.final.main:app --reload
+uvicorn python.clase-16.final.main:app --reload
 ```
 
 ## Railway
 
 Configura `ANTHROPIC_API_KEY`, `APP_API_KEY` y `PORT` como variables de entorno.
-El comando de inicio sugerido es `uvicorn python.clase-18.final.main:app --host 0.0.0.0 --port $PORT`.
+El comando de inicio sugerido es `uvicorn python.clase-16.final.main:app --host 0.0.0.0 --port $PORT`.
     ''',
 }
 
@@ -1872,33 +1854,8 @@ await server.listen({ port: Number(process.env.PORT ?? 3000), host: "0.0.0.0" })
 
 
 TS_EXTRA_FILES = {
-    'typescript/clase-09/final/schemas.ts': '''
-import { z } from "zod";
-
-export const InvoiceData = z.object({
-  provider: z.string().nullable(),
-  date: z.string().nullable(),
-  currency: z.string().nullable(),
-  total: z.number().nullable(),
-  items: z.array(z.object({
-    description: z.string(),
-    quantity: z.number().nullable().optional(),
-    unit_price: z.number().nullable().optional(),
-    total: z.number(),
-  })),
-});
-    ''',
-    'typescript/clase-09/final/samples/README.md': '''
-# Samples
-
-Coloca aquí `factura_001.pdf` o cualquier factura PDF de prueba antes de ejecutar:
-
-```bash
-npm run clase:09:final -- ./clase-09/final/samples/factura_001.pdf
-```
-    ''',
-    'typescript/clase-18/README.md': '''
-# Clase 18: Deploy tu app con Fastify + Railway
+    'typescript/clase-16/README.md': '''
+# Clase 16: Deploy tu app con Fastify + Railway
 
 **Objetivo:** mostrar la alternativa TypeScript de la API REST final con autenticación básica y variables seguras.
 
@@ -1912,7 +1869,7 @@ npm run clase:09:final -- ./clase-09/final/samples/factura_001.pdf
 ```bash
 export ANTHROPIC_API_KEY="tu_api_key"
 export APP_API_KEY="clave_para_tu_app"
-npm run clase:18:final
+npm run clase:16:final
 ```
 
 ## Railway
@@ -1961,8 +1918,8 @@ def build_root_files() -> None:
 
     Repositorio para el curso **Construyendo aplicaciones con Claude API**.
 
-    - 18 clases.
-    - 4 proyectos.
+    - 16 clases.
+    - 2 proyectos.
     - Ruta principal en Python.
     - Ruta alternativa en TypeScript con ejemplos equivalentes.
     - Cada clase incluye carpeta `inicio` y `final` para enseñar con checkpoints claros.
@@ -1985,7 +1942,7 @@ def build_root_files() -> None:
     ## Ramas por clase (estilo Platzi)
 
     Además de las carpetas, cada clase se publica como una **rama aislada**: al hacer
-    checkout solo verás el contenido de esa clase (Python y TypeScript), no las 18.
+    checkout solo verás el contenido de esa clase (Python y TypeScript), no las 16.
 
     - `clase-XX-inicio`: punto de partida para resolver en vivo.
     - `clase-XX-final`: solución completa de la clase.
@@ -2112,23 +2069,21 @@ def build_root_files() -> None:
     | 06 | Inputs multimedia: imágenes y documentos PDF |
     | 07 | Outputs estructurados con JSON mode |
     | 08 | Prompt engineering para extracción de datos |
-    | 09 | Proyecto: extractor de facturas en PDF |
-    | 10 | Tool use: cómo Claude llama funciones externas |
-    | 11 | Definir herramientas y manejar tool_result |
-    | 12 | Loop agentico: razonar → actuar → observar |
-    | 13 | Manejo de errores y seguridad en agentes |
-    | 14 | Proyecto: agente de búsqueda y resumen web |
-    | 15 | Prompt caching: reduce costos |
-    | 16 | Batch API para miles de requests |
-    | 17 | Rate limits, reintentos y observabilidad |
-    | 18 | Proyecto final: FastAPI + Railway |
+    | 09 | Tool use: cómo Claude llama funciones externas |
+    | 10 | Definir herramientas y manejar tool_result |
+    | 11 | Loop agentico: razonar → actuar → observar |
+    | 12 | Manejo de errores y seguridad en agentes |
+    | 13 | Prompt caching: reduce costos |
+    | 14 | Batch API para miles de requests |
+    | 15 | Rate limits, reintentos y observabilidad |
+    | 16 | Proyecto final: FastAPI + Railway |
     ''')
     write(".env.example", '''
     # Copia este archivo a .env o exporta la variable en tu terminal.
     # No subas API keys reales al repositorio.
     ANTHROPIC_API_KEY=tu_api_key_de_anthropic
 
-    # Clase 18 / Railway puede usar PORT automáticamente.
+    # Clase 16 / Railway puede usar PORT automáticamente.
     PORT=8000
     ''')
     write(".gitignore", '''
@@ -2266,9 +2221,10 @@ def build_root_files() -> None:
 def build_classes() -> None:
     for number, title, objective in CLASSES:
         slug = f"clase-{number:02d}"
+        source = SOURCE_NUMBER[number]
         write(f"python/{slug}/README.md", class_readme("python", number, title, objective))
         write(f"python/{slug}/inicio/main.py", py_starter(number, title))
-        write(f"python/{slug}/final/main.py", PY_FINALS[number])
+        write(f"python/{slug}/final/main.py", PY_FINALS[source])
 
         for relative_path, content in PY_EXTRA_FILES.items():
             if relative_path.startswith(f"python/{slug}/"):
@@ -2276,7 +2232,7 @@ def build_classes() -> None:
 
         write(f"typescript/{slug}/README.md", class_readme("typescript", number, title, objective))
         write(f"typescript/{slug}/inicio/main.ts", ts_starter(number, title))
-        write(f"typescript/{slug}/final/main.ts", TS_FINALS[number])
+        write(f"typescript/{slug}/final/main.ts", TS_FINALS[source])
 
         for relative_path, content in TS_EXTRA_FILES.items():
             if relative_path.startswith(f"typescript/{slug}/"):

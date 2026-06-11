@@ -1,35 +1,18 @@
+import Anthropic from "@anthropic-ai/sdk";
+
 export {};
 
-const MAX_STEPS = 5;
+const apiKey = process.env.ANTHROPIC_API_KEY;
+if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");
 
-function getWeather(city: string): string {
-  return `Clima en ${city}: lluvia ligera.`;
-}
+const longPolicy = "Reglas internas del asistente. ".repeat(400);
+const client = new Anthropic({ apiKey });
+const response = await client.messages.create({
+  model: "claude-sonnet-4-6",
+  max_tokens: 300,
+  system: [{ type: "text", text: longPolicy, cache_control: { type: "ephemeral" } }],
+  messages: [{ role: "user", content: "Resume las 3 reglas principales." }],
+});
 
-const availableTools = {
-  get_weather: (args: Record<string, unknown>): string => {
-    const city = typeof args.city === "string" ? args.city : "ciudad desconocida";
-    return getWeather(city);
-  },
-};
-
-function runTool(name: string, args: Record<string, unknown>): string {
-  if (name !== "get_weather") return "Error: herramienta no permitida.";
-
-  try {
-    return availableTools.get_weather(args);
-  } catch (error) {
-    return `Error ejecutando ${name}: ${error instanceof Error ? error.message : "desconocido"}`;
-  }
-}
-
-for (let step = 0; step < MAX_STEPS; step += 1) {
-  if (step === MAX_STEPS - 1) {
-    console.log("El agente alcanzó el máximo de pasos permitidos.");
-    break;
-  }
-  console.log(runTool("get_weather", { city: "Bogotá" }));
-  break;
-}
-
-console.log("Reglas: allowlist de herramientas, validación de argumentos, max steps y nunca ejecutar código arbitrario.");
+console.log(response.content.filter((block) => block.type === "text").map((block) => block.text).join(""));
+console.log(response.usage);

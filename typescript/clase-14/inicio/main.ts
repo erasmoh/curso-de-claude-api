@@ -1,5 +1,5 @@
 /**
- * Clase 14 - inicio: Construye un agente de búsqueda y resumen web.
+ * Clase 14 - inicio: Batch API para procesar miles de requests.
  *
  * Punto de partida para resolver en vivo. Mantiene comentarios explícitos
  * para que el estudiante entienda qué parte debe completar.

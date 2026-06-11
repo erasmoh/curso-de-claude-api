@@ -1,6 +1,6 @@
-# Clase 10: Tool use: cómo Claude llama funciones externas
+# Clase 10: Definir herramientas y manejar tool_result
 
-**Objetivo:** Declarar herramientas y detectar bloques tool_use.
+**Objetivo:** Ejecutar una función local y devolver su resultado a Claude.
 
 ## Estructura
 

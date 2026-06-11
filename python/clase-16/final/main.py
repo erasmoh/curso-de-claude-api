@@ -1,40 +1,44 @@
-"""Batch API: crear batch, consultar estado y procesar resultados cuando termine."""
+"""API REST con FastAPI, API key de app y variables listas para Railway."""
 
 import os
 from anthropic import Anthropic
-from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
-from anthropic.types.messages.batch_create_params import Request
+from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel
 
 MODEL = "claude-sonnet-4-6"
+app = FastAPI(title="Curso Claude API")
+APP_API_KEY = os.getenv("APP_API_KEY")
 
 
-def main() -> None:
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
+    reply: str
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(payload: ChatRequest, x_api_key: str = Header(default="")) -> ChatResponse:
+    if not APP_API_KEY:
+        raise HTTPException(status_code=500, detail="APP_API_KEY no configurada.")
+    if x_api_key != APP_API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
-        raise RuntimeError("Define ANTHROPIC_API_KEY.")
+        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY no configurada.")
 
     client = Anthropic(api_key=api_key)
-    batch = client.messages.batches.create(requests=[
-        Request(
-            custom_id="invoice-001",
-            params=MessageCreateParamsNonStreaming(
-                model=MODEL,
-                max_tokens=500,
-                messages=[{"role": "user", "content": "Resume esta factura de ejemplo."}],
-            ),
-        )
-    ])
-    print(batch.id, batch.processing_status)
-
-    batch_status = client.messages.batches.retrieve(batch.id)
-    print(batch_status.processing_status)
-
-    if batch_status.processing_status == "ended":
-        for result in client.messages.batches.results(batch.id):
-            print(result.custom_id, result.result.type)
-    else:
-        print("El batch todavía no termina. Vuelve a consultar más tarde antes de leer results.")
-
-
-if __name__ == "__main__":
-    main()
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=600,
+        messages=[{"role": "user", "content": payload.message}],
+    )
+    reply = "".join(block.text for block in response.content if block.type == "text")
+    return ChatResponse(reply=reply)

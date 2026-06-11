@@ -1,6 +1,6 @@
-# Clase 11: Definir herramientas y manejar tool_result
+# Clase 11: Loop agentico: razonar → actuar → observar
 
-**Objetivo:** Ejecutar una función local y devolver su resultado a Claude.
+**Objetivo:** Implementar el ciclo while de un agente con herramientas.
 
 ## Estructura
 

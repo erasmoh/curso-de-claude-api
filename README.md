@@ -2,8 +2,8 @@
 
 Repositorio para el curso **Construyendo aplicaciones con Claude API**.
 
-- 18 clases.
-- 4 proyectos.
+- 16 clases.
+- 2 proyectos.
 - Ruta principal en Python.
 - Ruta alternativa en TypeScript con ejemplos equivalentes.
 - Cada clase incluye carpeta `inicio` y `final` para enseñar con checkpoints claros.
@@ -26,7 +26,7 @@ typescript/
 ## Ramas por clase (estilo Platzi)
 
 Además de las carpetas, cada clase se publica como una **rama aislada**: al hacer
-checkout solo verás el contenido de esa clase (Python y TypeScript), no las 18.
+checkout solo verás el contenido de esa clase (Python y TypeScript), no las 16.
 
 - `clase-XX-inicio`: punto de partida para resolver en vivo.
 - `clase-XX-final`: solución completa de la clase.
@@ -153,13 +153,11 @@ npm run typecheck
 | 06 | Inputs multimedia: imágenes y documentos PDF |
 | 07 | Outputs estructurados con JSON mode |
 | 08 | Prompt engineering para extracción de datos |
-| 09 | Proyecto: extractor de facturas en PDF |
-| 10 | Tool use: cómo Claude llama funciones externas |
-| 11 | Definir herramientas y manejar tool_result |
-| 12 | Loop agentico: razonar → actuar → observar |
-| 13 | Manejo de errores y seguridad en agentes |
-| 14 | Proyecto: agente de búsqueda y resumen web |
-| 15 | Prompt caching: reduce costos |
-| 16 | Batch API para miles de requests |
-| 17 | Rate limits, reintentos y observabilidad |
-| 18 | Proyecto final: FastAPI + Railway |
+| 09 | Tool use: cómo Claude llama funciones externas |
+| 10 | Definir herramientas y manejar tool_result |
+| 11 | Loop agentico: razonar → actuar → observar |
+| 12 | Manejo de errores y seguridad en agentes |
+| 13 | Prompt caching: reduce costos |
+| 14 | Batch API para miles de requests |
+| 15 | Rate limits, reintentos y observabilidad |
+| 16 | Proyecto final: FastAPI + Railway |

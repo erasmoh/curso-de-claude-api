@@ -1,6 +1,6 @@
-# Clase 09: Construye un extractor de facturas en PDF
+# Clase 09: Tool use: cómo Claude llama funciones externas
 
-**Objetivo:** Procesar una factura PDF y devolver JSON validado.
+**Objetivo:** Declarar herramientas y detectar bloques tool_use.
 
 ## Estructura
 

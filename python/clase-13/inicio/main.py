@@ -1,4 +1,4 @@
-"""Clase 13 - inicio: Manejo de errores y seguridad en agentes.
+"""Clase 13 - inicio: Prompt caching: reduce costos hasta un 90%.
 
 Este archivo es el punto de partida de la clase. Está lleno de pistas y
 TODOs para que el estudiante escriba el código durante la explicación.

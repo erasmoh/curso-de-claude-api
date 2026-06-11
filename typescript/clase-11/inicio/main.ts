@@ -1,5 +1,5 @@
 /**
- * Clase 11 - inicio: Definir herramientas y manejar tool_result.
+ * Clase 11 - inicio: Loop agentico: razonar → actuar → observar.
  *
  * Punto de partida para resolver en vivo. Mantiene comentarios explícitos
  * para que el estudiante entienda qué parte debe completar.

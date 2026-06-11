@@ -1,4 +1,4 @@
-"""Clase 10 - inicio: Tool use: cómo Claude llama funciones externas.
+"""Clase 10 - inicio: Definir herramientas y manejar tool_result.
 
 Este archivo es el punto de partida de la clase. Está lleno de pistas y
 TODOs para que el estudiante escriba el código durante la explicación.

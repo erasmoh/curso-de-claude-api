@@ -1,5 +1,5 @@
 /**
- * Clase 15 - inicio: Prompt caching: reduce costos hasta un 90%.
+ * Clase 15 - inicio: Rate limits, reintentos y observabilidad.
  *
  * Punto de partida para resolver en vivo. Mantiene comentarios explícitos
  * para que el estudiante entienda qué parte debe completar.
