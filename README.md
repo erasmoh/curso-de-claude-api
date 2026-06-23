@@ -11,14 +11,23 @@ Solución completa y comentada de la clase.
 
 ## Cómo ejecutar
 
+Configura tu API key (sirve para ambas rutas):
+
 ```bash
 cp .env.example .env
 export ANTHROPIC_API_KEY="tu_api_key"
+```
 
-# Python
-python python/clase-15/final/main.py
+Python (desde la carpeta de la clase; es una app FastAPI, se sirve con `uvicorn`):
 
-# TypeScript
+```bash
+cd python/clase-15
+uvicorn --app-dir final main:app --reload
+```
+
+TypeScript (desde la raíz del repositorio):
+
+```bash
 cd typescript && npm install && npm run clase:15:final
 ```
 
