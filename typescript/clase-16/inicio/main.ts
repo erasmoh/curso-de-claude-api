@@ -1,11 +1,11 @@
 /**
- * Clase 15 - inicio: Frontend + hub de proyectos con Fastify.
+ * Clase 16 - inicio: Frontend + hub de proyectos con Fastify.
  *
  * Punto de partida que combina dos cosas:
  * 1. Lo último de la clase 14 (Batch API) como referencia para continuidad.
  * 2. El esqueleto del hub web que completaremos en vivo durante la clase.
  *
- * Ejecuta el frontend con: npm run clase:15:inicio
+ * Ejecuta el frontend con: npm run clase:16:inicio
  */
 
 import Anthropic from "@anthropic-ai/sdk";

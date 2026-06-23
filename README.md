@@ -1,13 +1,13 @@
-# Curso de Claude API — Clase 15: Frontend + hub de proyectos con FastAPI
+# Curso de Claude API — Clase 16: Frontend + hub de proyectos con FastAPI
 
-Esta rama es el checkpoint **inicio** de la clase 15.
+Esta rama es el checkpoint **inicio** de la clase 16.
 
 Punto de partida con TODOs para resolver en vivo durante la clase.
 
 ## Contenido de esta rama
 
-- `python/clase-15/inicio/main.py` — versión Python (ruta principal).
-- `typescript/clase-15/inicio/main.ts` — versión TypeScript (ruta alternativa).
+- `python/clase-16/inicio/main.py` — versión Python (ruta principal).
+- `typescript/clase-16/inicio/main.ts` — versión TypeScript (ruta alternativa).
 
 ## Cómo ejecutar
 
@@ -16,10 +16,10 @@ cp .env.example .env
 export ANTHROPIC_API_KEY="tu_api_key"
 
 # Python
-python python/clase-15/inicio/main.py
+python python/clase-16/inicio/main.py
 
 # TypeScript
-cd typescript && npm install && npm run clase:15:inicio
+cd typescript && npm install && npm run clase:16:inicio
 ```
 
 ## Navegación del curso

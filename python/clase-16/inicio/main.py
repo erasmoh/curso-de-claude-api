@@ -1,11 +1,11 @@
-"""Clase 15 - inicio: Frontend + hub de proyectos con FastAPI.
+"""Clase 16 - inicio: Frontend + hub de proyectos con FastAPI.
 
 Punto de partida que combina dos cosas:
 1. Lo último de la clase 14 (Batch API) como referencia para continuidad.
 2. El esqueleto del hub web que completaremos en vivo durante la clase.
 
 Ejecuta el frontend con:
-    uvicorn --app-dir python/clase-15/inicio main:app --reload
+    uvicorn --app-dir python/clase-16/inicio main:app --reload
 """
 
 import os
