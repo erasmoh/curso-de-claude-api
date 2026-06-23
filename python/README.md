@@ -5,9 +5,9 @@ Python es la ruta principal del curso. Cada clase tiene:
 - `inicio/main.py`: ejercicio guiado con TODOs.
 - `final/main.py`: implementación completa y comentada.
 
-> Todos los comandos de abajo se ejecutan **desde la carpeta de la clase** que quieras
-> trabajar (por ejemplo `python/clase-01`). Como `requirements.txt` y `pyproject.toml`
-> viven en la raíz del repo, se referencian con `../../`.
+> Todos los comandos de abajo se ejecutan **desde la carpeta de la clase** (en esta rama,
+> `python/clase-16`). El `pyproject.toml` vive en la raíz del repo (se referencia con
+> `../../`) y el `requirements.txt` en `final/`, junto a `main.py`, para el deploy en Railway.
 
 ## Requisitos
 
@@ -17,14 +17,14 @@ Python es la ruta principal del curso. Cada clase tiene:
 
 ```bash
 # Sitúate en la carpeta de la clase que quieras trabajar
-cd python/clase-01
+cd python/clase-16
 
 # 1. Crear y activar un entorno virtual (una vez por clase)
 python -m venv .venv
 source .venv/bin/activate          # En Windows: .venv\Scripts\activate
 
-# 2. Instalar dependencias (requirements.txt está en la raíz del repo)
-pip install -r ../../requirements.txt
+# 2. Instalar dependencias (requirements.txt vive en la carpeta final)
+pip install -r final/requirements.txt
 ```
 
 Dependencias principales: `anthropic`, `fastapi`, `pydantic`, `python-dotenv` y `uvicorn[standard]`.
