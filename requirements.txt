@@ -1,0 +1,13 @@
+# Dependencias de la ruta Python del curso de Claude API.
+# Reflejan las versiones declaradas en pyproject.toml (fuente de verdad).
+# Instalación: pip install -r requirements.txt
+
+anthropic>=0.54.0
+fastapi>=0.115.0
+pydantic>=2.7.0
+python-dotenv>=1.0.1
+uvicorn[standard]>=0.30.0
+
+# Herramientas de desarrollo (opcionales):
+#   pip install ruff>=0.11.0 mypy>=1.10.0
+# o, usando pyproject.toml:  pip install -e ".[dev]"

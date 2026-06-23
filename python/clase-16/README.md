@@ -1,4 +1,4 @@
-# Clase 15: Frontend + hub de proyectos con FastAPI
+# Clase 16: Frontend + hub de proyectos con FastAPI
 
 **Objetivo:** convertir los proyectos clave del curso en una sola aplicación web: un frontend servido por FastAPI y tres endpoints para chatbot, extracción JSON y agente con herramientas.
 
@@ -10,8 +10,10 @@
 ## Ejecución local
 
 ```bash
+# Desde la carpeta de la clase
+cd python/clase-16
 export ANTHROPIC_API_KEY="tu_api_key"
-uvicorn --app-dir python/clase-15/final main:app --reload
+uvicorn --app-dir final main:app --reload
 ```
 
 Abre `http://127.0.0.1:8000` para probar los tres proyectos desde el navegador.
