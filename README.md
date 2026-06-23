@@ -2,8 +2,8 @@
 
 Repositorio para el curso **Construyendo aplicaciones con Claude API**.
 
-- 16 clases.
-- 2 proyectos.
+- 17 clases.
+- 3 proyectos.
 - Ruta principal en Python.
 - Ruta alternativa en TypeScript con ejemplos equivalentes.
 - Cada clase incluye carpeta `inicio` y `final` para enseñar con checkpoints claros.
@@ -26,7 +26,7 @@ typescript/
 ## Ramas por clase (estilo Platzi)
 
 Además de las carpetas, cada clase se publica como una **rama aislada**: al hacer
-checkout solo verás el contenido de esa clase (Python y TypeScript), no las 16.
+checkout solo verás el contenido de esa clase (Python y TypeScript), no las 17.
 
 - `clase-XX-inicio`: punto de partida para resolver en vivo.
 - `clase-XX-final`: solución completa de la clase.
@@ -161,3 +161,4 @@ npm run typecheck
 | 14 | Batch API para miles de requests |
 | 15 | Rate limits, reintentos y observabilidad |
 | 16 | Proyecto final: FastAPI + Railway |
+| 17 | Frontend + hub de proyectos con FastAPI |

@@ -6,7 +6,7 @@ Cada clase publica dos ramas aisladas:
 - ``clase-XX-inicio``: punto de partida (solo la carpeta ``inicio`` de esa clase).
 - ``clase-XX-final``: solución (solo la carpeta ``final`` de esa clase).
 
-A diferencia de ``main`` (que contiene las 18 clases), cada rama contiene
+A diferencia de ``main`` (que contiene todas las clases), cada rama contiene
 únicamente el contenido de **una** clase, en ambos lenguajes (Python y
 TypeScript), más los archivos de configuración compartidos.
 

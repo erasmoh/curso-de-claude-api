@@ -24,6 +24,7 @@ CLASSES = [
     (14, "Batch API para procesar miles de requests", "Crear batches, consultar estado y leer resultados."),
     (15, "Rate limits, reintentos y observabilidad", "Aplicar backoff, logs estructurados y métricas de tokens."),
     (16, "Deploy tu app con FastAPI + Railway", "Exponer el chatbot como API REST lista para Railway."),
+    (17, "Frontend + hub de proyectos con FastAPI", "Servir un frontend y reunir chatbot, extracción JSON y agente en una sola app."),
 ]
 
 
@@ -36,7 +37,7 @@ CLASSES = [
 SOURCE_NUMBER = {
     1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8,
     9: 10, 10: 11, 11: 12, 12: 13,
-    13: 15, 14: 16, 15: 17, 16: 18,
+    13: 15, 14: 16, 15: 17, 16: 18, 17: 19,
 }
 
 
@@ -108,6 +109,69 @@ def ts_starter(number: int, title: str) -> str:
 
     await main();
     '''
+
+
+PY_STARTERS = {
+    17: '''
+"""Clase 17 - inicio: Frontend y hub de proyectos con FastAPI.
+
+Punto de partida para convertir los proyectos del curso en una sola app web.
+Ejecuta con: uvicorn --app-dir python/clase-17/inicio main:app --reload
+"""
+
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
+
+MODEL = "claude-sonnet-4-6"
+app = FastAPI(title="Claude API Hub")
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1)
+
+
+INDEX_HTML = """
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claude API Hub</title>
+  </head>
+  <body>
+    <main>
+      <h1>Claude API Hub</h1>
+      <p>TODO: diseña un frontend para llamar /api/chat, /api/extract y /api/agent.</p>
+    </main>
+  </body>
+</html>
+"""
+
+
+@app.get("/", response_class=HTMLResponse)
+def index() -> HTMLResponse:
+    return HTMLResponse(INDEX_HTML)
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.post("/api/chat")
+def chat(payload: ChatRequest) -> dict[str, str]:
+    # TODO 1: lee ANTHROPIC_API_KEY y crea el cliente de Anthropic.
+    # TODO 2: envía payload.message a Claude.
+    # TODO 3: devuelve {"reply": "..."} para que el frontend lo pinte.
+    return {"reply": f"TODO: conectar Claude para: {payload.message}"}
+
+
+# TODO 4: agrega /api/extract para el proyecto de JSON estructurado.
+# TODO 5: agrega /api/agent para el proyecto de tool use + calculadora.
+# TODO 6: conecta los formularios del frontend con fetch().
+    ''',
+}
 
 
 PY_FINALS = {
@@ -1040,6 +1104,376 @@ def chat(payload: ChatRequest, x_api_key: str = Header(default="")) -> ChatRespo
     reply = "".join(block.text for block in response.content if block.type == "text")
     return ChatResponse(reply=reply)
     ''',
+    19: '''
+"""App FastAPI con frontend y tres mini-proyectos del curso en un solo hub."""
+
+from __future__ import annotations
+
+import ast
+import json
+import os
+
+from anthropic import Anthropic
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
+
+MODEL = "claude-sonnet-4-6"
+MAX_AGENT_STEPS = 4
+
+app = FastAPI(title="Claude API Hub", version="0.1.0")
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1)
+
+
+class ChatResponse(BaseModel):
+    reply: str
+
+
+class ExtractRequest(BaseModel):
+    text: str = Field(min_length=1)
+
+
+class InvoiceItem(BaseModel):
+    description: str
+    quantity: float | None = None
+    unit_price: float | None = None
+    total: float
+
+
+class InvoiceData(BaseModel):
+    provider: str
+    date: str
+    currency: str
+    total: float
+    items: list[InvoiceItem]
+
+
+class ExtractResponse(BaseModel):
+    data: InvoiceData
+
+
+class AgentRequest(BaseModel):
+    question: str = Field(min_length=1)
+
+
+class AgentResponse(BaseModel):
+    answer: str
+    steps: list[str]
+
+
+INVOICE_PROMPT = """
+Extrae la información de la factura.
+Responde únicamente JSON válido con provider, date, currency, total e items.
+No agregues explicación fuera del JSON.
+"""
+
+CALCULATOR_TOOL = {
+    "name": "calculator",
+    "description": "Calculadora aritmética para sumas, restas, multiplicaciones y divisiones.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"expression": {"type": "string"}},
+        "required": ["expression"],
+    },
+}
+
+INDEX_HTML = """
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claude API Hub</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #eef2ff;
+        color: #172033;
+      }
+      body {
+        margin: 0;
+      }
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0;
+      }
+      header {
+        background: linear-gradient(135deg, #172033, #5b4bff);
+        border-radius: 28px;
+        color: white;
+        padding: 32px;
+        box-shadow: 0 24px 70px rgba(23, 32, 51, 0.24);
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 4rem);
+        line-height: 1;
+        margin: 0 0 12px;
+      }
+      .grid {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        margin-top: 24px;
+      }
+      section {
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(91, 75, 255, 0.14);
+        border-radius: 24px;
+        box-shadow: 0 18px 50px rgba(91, 75, 255, 0.10);
+        padding: 22px;
+      }
+      label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      textarea, input {
+        width: 100%;
+        border: 1px solid #c7d2fe;
+        border-radius: 16px;
+        box-sizing: border-box;
+        font: inherit;
+        min-height: 120px;
+        padding: 14px;
+        resize: vertical;
+      }
+      input {
+        min-height: 0;
+      }
+      button {
+        background: #5b4bff;
+        border: 0;
+        border-radius: 999px;
+        color: white;
+        cursor: pointer;
+        font-weight: 800;
+        margin-top: 12px;
+        padding: 12px 18px;
+      }
+      pre {
+        background: #0f172a;
+        border-radius: 18px;
+        color: #dbeafe;
+        min-height: 120px;
+        overflow: auto;
+        padding: 16px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p>Clase 17 · Frontend + FastAPI</p>
+        <h1>Todos los proyectos del curso en una sola app</h1>
+        <p>Un frontend llama tres endpoints: chatbot, extractor JSON y agente con herramienta calculadora.</p>
+      </header>
+
+      <div class="grid">
+        <section>
+          <h2>Chatbot</h2>
+          <label for="chat-message">Mensaje</label>
+          <textarea id="chat-message">Dame 3 ideas para practicar Claude API.</textarea>
+          <button data-run="chat">Enviar</button>
+          <pre id="chat-output">Respuesta pendiente...</pre>
+        </section>
+
+        <section>
+          <h2>Extractor JSON</h2>
+          <label for="invoice-text">Factura</label>
+          <textarea id="invoice-text">Factura de ACME S.A. emitida el 2026-05-01. 2 horas de consultoría a 50 USD cada una. Total: USD 100.</textarea>
+          <button data-run="extract">Extraer</button>
+          <pre id="extract-output">JSON pendiente...</pre>
+        </section>
+
+        <section>
+          <h2>Agente con tools</h2>
+          <label for="agent-question">Pregunta</label>
+          <input id="agent-question" value="Calcula (128 * 7) + 34 y explica el resultado." />
+          <button data-run="agent">Resolver</button>
+          <pre id="agent-output">Respuesta pendiente...</pre>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      async function postJson(path, body) {
+        const response = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || data.error || JSON.stringify(data));
+        }
+        return data;
+      }
+
+      function show(id, value) {
+        document.getElementById(id).textContent =
+          typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+      }
+
+      document.querySelector('[data-run="chat"]').addEventListener('click', async () => {
+        show('chat-output', 'Cargando...');
+        try {
+          const data = await postJson('/api/chat', {
+            message: document.getElementById('chat-message').value,
+          });
+          show('chat-output', data.reply);
+        } catch (error) {
+          show('chat-output', error.message);
+        }
+      });
+
+      document.querySelector('[data-run="extract"]').addEventListener('click', async () => {
+        show('extract-output', 'Cargando...');
+        try {
+          const data = await postJson('/api/extract', {
+            text: document.getElementById('invoice-text').value,
+          });
+          show('extract-output', data.data);
+        } catch (error) {
+          show('extract-output', error.message);
+        }
+      });
+
+      document.querySelector('[data-run="agent"]').addEventListener('click', async () => {
+        show('agent-output', 'Cargando...');
+        try {
+          const data = await postJson('/api/agent', {
+            question: document.getElementById('agent-question').value,
+          });
+          show('agent-output', data);
+        } catch (error) {
+          show('agent-output', error.message);
+        }
+      });
+    </script>
+  </body>
+</html>
+"""
+
+
+def create_client() -> Anthropic:
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY no configurada.")
+    return Anthropic(api_key=api_key)
+
+
+def response_text(response) -> str:
+    return "".join(block.text for block in response.content if block.type == "text")
+
+
+def evaluate_expression(node: ast.AST) -> float:
+    if isinstance(node, ast.Expression):
+        return evaluate_expression(node.body)
+    if isinstance(node, ast.Constant) and isinstance(node.value, int | float):
+        return float(node.value)
+    if isinstance(node, ast.BinOp):
+        left = evaluate_expression(node.left)
+        right = evaluate_expression(node.right)
+        if isinstance(node.op, ast.Add):
+            return left + right
+        if isinstance(node.op, ast.Sub):
+            return left - right
+        if isinstance(node.op, ast.Mult):
+            return left * right
+        if isinstance(node.op, ast.Div):
+            return left / right
+    if isinstance(node, ast.UnaryOp):
+        value = evaluate_expression(node.operand)
+        if isinstance(node.op, ast.UAdd):
+            return value
+        if isinstance(node.op, ast.USub):
+            return -value
+    raise ValueError("Expresión no permitida.")
+
+
+def calculator(expression: str) -> str:
+    try:
+        tree = ast.parse(expression, mode="eval")
+        return str(evaluate_expression(tree))
+    except (SyntaxError, ValueError, ZeroDivisionError) as error:
+        return f"Expresión rechazada: {error}"
+
+
+@app.get("/", response_class=HTMLResponse)
+def index() -> HTMLResponse:
+    return HTMLResponse(INDEX_HTML)
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.post("/api/chat", response_model=ChatResponse)
+def chat(payload: ChatRequest) -> ChatResponse:
+    response = create_client().messages.create(
+        model=MODEL,
+        max_tokens=700,
+        messages=[{"role": "user", "content": payload.message}],
+    )
+    return ChatResponse(reply=response_text(response))
+
+
+@app.post("/api/extract", response_model=ExtractResponse)
+def extract(payload: ExtractRequest) -> ExtractResponse:
+    response = create_client().messages.create(
+        model=MODEL,
+        max_tokens=700,
+        system=INVOICE_PROMPT,
+        messages=[{"role": "user", "content": payload.text}],
+    )
+    raw_text = response_text(response)
+    try:
+        invoice = InvoiceData.model_validate(json.loads(raw_text))
+    except (json.JSONDecodeError, ValueError) as error:
+        raise HTTPException(status_code=502, detail=f"Claude no devolvió JSON válido: {error}") from error
+    return ExtractResponse(data=invoice)
+
+
+@app.post("/api/agent", response_model=AgentResponse)
+def agent(payload: AgentRequest) -> AgentResponse:
+    client = create_client()
+    messages = [{"role": "user", "content": payload.question}]
+    steps: list[str] = []
+
+    for _step in range(MAX_AGENT_STEPS):
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=700,
+            tools=[CALCULATOR_TOOL],
+            messages=messages,
+        )
+        messages.append({"role": "assistant", "content": response.content})
+        tool_results = []
+
+        for block in response.content:
+            if block.type == "tool_use" and block.name == "calculator":
+                expression = ""
+                if isinstance(block.input, dict):
+                    input_expression = block.input.get("expression")
+                    if isinstance(input_expression, str):
+                        expression = input_expression
+                result = calculator(expression)
+                steps.append(f"calculator({expression}) -> {result}")
+                tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": result})
+
+        if not tool_results:
+            return AgentResponse(answer=response_text(response), steps=steps)
+        messages.append({"role": "user", "content": tool_results})
+
+    raise HTTPException(status_code=504, detail="El agente alcanzó el límite de pasos.")
+    '''
 }
 
 
@@ -1052,6 +1486,33 @@ def chat(payload: ChatRequest, x_api_key: str = Header(default="")) -> ChatRespo
 
 
 PY_EXTRA_FILES = {
+    'python/clase-17/README.md': '''
+# Clase 17: Frontend + hub de proyectos con FastAPI
+
+**Objetivo:** convertir los proyectos clave del curso en una sola aplicación web: un frontend servido por FastAPI y tres endpoints para chatbot, extracción JSON y agente con herramientas.
+
+## Estructura
+
+- `inicio/`: punto de partida con una app FastAPI mínima, `/health`, `/` y TODOs para completar los endpoints.
+- `final/`: solución con frontend HTML/CSS/JS embebido y endpoints `/api/chat`, `/api/extract` y `/api/agent`.
+
+## Ejecución local
+
+```bash
+export ANTHROPIC_API_KEY="tu_api_key"
+uvicorn --app-dir python/clase-17/final main:app --reload
+```
+
+Abre `http://127.0.0.1:8000` para probar los tres proyectos desde el navegador.
+
+## Guion sugerido
+
+1. Mostrar el frontend estático servido por FastAPI.
+2. Conectar el formulario del chatbot con `fetch('/api/chat')`.
+3. Reutilizar el extractor de facturas de la clase 07 en `/api/extract`.
+4. Reutilizar el agente con calculadora de la clase 11 en `/api/agent`.
+5. Explicar por qué el frontend nunca debe llamar a Claude API directamente con la API key.
+    ''',
     'python/clase-16/README.md': '''
 # Clase 16: Deploy tu app con FastAPI + Railway
 
@@ -1074,6 +1535,46 @@ uvicorn python.clase-16.final.main:app --reload
 
 Configura `ANTHROPIC_API_KEY`, `APP_API_KEY` y `PORT` como variables de entorno.
 El comando de inicio sugerido es `uvicorn python.clase-16.final.main:app --host 0.0.0.0 --port $PORT`.
+    ''',
+}
+
+
+TS_STARTERS = {
+    17: '''
+/**
+ * Clase 17 - inicio: Frontend y hub de proyectos con Fastify.
+ *
+ * Adaptación TypeScript del hub web. Ejecuta con npm run clase:17:inicio.
+ */
+
+import Fastify from "fastify";
+import { z } from "zod";
+
+export {};
+
+const ChatRequest = z.object({ message: z.string().min(1) });
+const server = Fastify({ logger: true });
+
+const indexHtml = `<!doctype html>
+<html lang="es">
+  <head><meta charset="utf-8" /><title>Claude API Hub</title></head>
+  <body>
+    <main>
+      <h1>Claude API Hub</h1>
+      <p>TODO: diseña el frontend y conecta /api/chat, /api/extract y /api/agent.</p>
+    </main>
+  </body>
+</html>`;
+
+server.get("/", async (_request, reply) => reply.type("text/html").send(indexHtml));
+server.get("/health", async () => ({ status: "ok" }));
+
+server.post("/api/chat", async (request) => {
+  const payload = ChatRequest.parse(request.body);
+  return { reply: `TODO: conectar Claude para: ${payload.message}` };
+});
+
+await server.listen({ port: Number(process.env.PORT ?? 3000), host: "0.0.0.0" });
     ''',
 }
 
@@ -1842,6 +2343,285 @@ server.post("/chat", async (request, reply) => {
 
 await server.listen({ port: Number(process.env.PORT ?? 3000), host: "0.0.0.0" });
     ''',
+    19: '''
+import Anthropic from "@anthropic-ai/sdk";
+import type { MessageParam, ToolResultBlockParam, ToolUnion } from "@anthropic-ai/sdk/resources/messages";
+import Fastify from "fastify";
+import type { FastifyReply } from "fastify";
+import { z } from "zod";
+
+export {};
+
+const MODEL = "claude-sonnet-4-6";
+const MAX_AGENT_STEPS = 4;
+
+const ChatRequest = z.object({ message: z.string().min(1) });
+const ExtractRequest = z.object({ text: z.string().min(1) });
+const AgentRequest = z.object({ question: z.string().min(1) });
+const CalculatorInput = z.object({ expression: z.string() });
+const InvoiceData = z.object({
+  provider: z.string(),
+  date: z.string(),
+  currency: z.string(),
+  total: z.number(),
+  items: z.array(z.object({
+    description: z.string(),
+    quantity: z.number().nullable().optional(),
+    unit_price: z.number().nullable().optional(),
+    total: z.number(),
+  })),
+});
+
+const invoicePrompt = `
+Extrae la información de la factura.
+Responde únicamente JSON válido con provider, date, currency, total e items.
+No agregues explicación fuera del JSON.
+`;
+
+const calculatorTool: ToolUnion = {
+  name: "calculator",
+  description: "Calculadora aritmética para sumas, restas, multiplicaciones y divisiones.",
+  input_schema: {
+    type: "object",
+    properties: { expression: { type: "string" } },
+    required: ["expression"],
+  },
+};
+
+const indexHtml = `<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claude API Hub</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #eef2ff; color: #172033; }
+      body { margin: 0; }
+      main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 40px 0; }
+      header { background: linear-gradient(135deg, #172033, #5b4bff); border-radius: 28px; color: white; padding: 32px; }
+      h1 { font-size: clamp(2rem, 5vw, 4rem); line-height: 1; margin: 0 0 12px; }
+      .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 24px; }
+      section { background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(91, 75, 255, 0.14); border-radius: 24px; padding: 22px; }
+      label { display: block; font-weight: 700; margin-bottom: 8px; }
+      textarea, input { width: 100%; border: 1px solid #c7d2fe; border-radius: 16px; box-sizing: border-box; font: inherit; min-height: 120px; padding: 14px; resize: vertical; }
+      input { min-height: 0; }
+      button { background: #5b4bff; border: 0; border-radius: 999px; color: white; cursor: pointer; font-weight: 800; margin-top: 12px; padding: 12px 18px; }
+      pre { background: #0f172a; border-radius: 18px; color: #dbeafe; min-height: 120px; overflow: auto; padding: 16px; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p>Clase 17 · Frontend + Fastify</p>
+        <h1>Todos los proyectos del curso en una sola app</h1>
+        <p>Un frontend llama tres endpoints: chatbot, extractor JSON y agente con herramienta calculadora.</p>
+      </header>
+      <div class="grid">
+        <section>
+          <h2>Chatbot</h2>
+          <label for="chat-message">Mensaje</label>
+          <textarea id="chat-message">Dame 3 ideas para practicar Claude API.</textarea>
+          <button data-run="chat">Enviar</button>
+          <pre id="chat-output">Respuesta pendiente...</pre>
+        </section>
+        <section>
+          <h2>Extractor JSON</h2>
+          <label for="invoice-text">Factura</label>
+          <textarea id="invoice-text">Factura de ACME S.A. emitida el 2026-05-01. 2 horas de consultoría a 50 USD cada una. Total: USD 100.</textarea>
+          <button data-run="extract">Extraer</button>
+          <pre id="extract-output">JSON pendiente...</pre>
+        </section>
+        <section>
+          <h2>Agente con tools</h2>
+          <label for="agent-question">Pregunta</label>
+          <input id="agent-question" value="Calcula (128 * 7) + 34 y explica el resultado." />
+          <button data-run="agent">Resolver</button>
+          <pre id="agent-output">Respuesta pendiente...</pre>
+        </section>
+      </div>
+    </main>
+    <script>
+      async function postJson(path, body) {
+        const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || JSON.stringify(data));
+        return data;
+      }
+      function show(id, value) {
+        document.getElementById(id).textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+      }
+      document.querySelector('[data-run="chat"]').addEventListener('click', async () => {
+        show('chat-output', 'Cargando...');
+        try { const data = await postJson('/api/chat', { message: document.getElementById('chat-message').value }); show('chat-output', data.reply); } catch (error) { show('chat-output', error.message); }
+      });
+      document.querySelector('[data-run="extract"]').addEventListener('click', async () => {
+        show('extract-output', 'Cargando...');
+        try { const data = await postJson('/api/extract', { text: document.getElementById('invoice-text').value }); show('extract-output', data.data); } catch (error) { show('extract-output', error.message); }
+      });
+      document.querySelector('[data-run="agent"]').addEventListener('click', async () => {
+        show('agent-output', 'Cargando...');
+        try { const data = await postJson('/api/agent', { question: document.getElementById('agent-question').value }); show('agent-output', data); } catch (error) { show('agent-output', error.message); }
+      });
+    </script>
+  </body>
+</html>`;
+
+type TextBlockLike = { type: string; text?: string };
+
+function createClient(): Anthropic {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY no configurada.");
+  return new Anthropic({ apiKey });
+}
+
+function responseText(content: TextBlockLike[]): string {
+  return content
+    .filter((block): block is { type: string; text: string } => block.type === "text" && typeof block.text === "string")
+    .map((block) => block.text)
+    .join("");
+}
+
+function readNumber(tokens: string[], cursor: { index: number }): number {
+  const token = tokens[cursor.index];
+  if (token === undefined || !/^\\d+(\\.\\d+)?$/.test(token)) throw new Error("Número esperado.");
+  cursor.index += 1;
+  return Number(token);
+}
+
+function evaluateExpression(expression: string): number {
+  const tokens = expression.match(/\\d+(?:\\.\\d+)?|[()+\\-*/]/g) ?? [];
+  const cursor = { index: 0 };
+
+  function factor(): number {
+    if (tokens[cursor.index] === "(") {
+      cursor.index += 1;
+      const value = expr();
+      if (tokens[cursor.index] !== ")") throw new Error("Paréntesis sin cerrar.");
+      cursor.index += 1;
+      return value;
+    }
+    if (tokens[cursor.index] === "-") {
+      cursor.index += 1;
+      return -factor();
+    }
+    return readNumber(tokens, cursor);
+  }
+
+  function term(): number {
+    let value = factor();
+    while (tokens[cursor.index] === "*" || tokens[cursor.index] === "/") {
+      const operator = tokens[cursor.index];
+      cursor.index += 1;
+      const right = factor();
+      value = operator === "*" ? value * right : value / right;
+    }
+    return value;
+  }
+
+  function expr(): number {
+    let value = term();
+    while (tokens[cursor.index] === "+" || tokens[cursor.index] === "-") {
+      const operator = tokens[cursor.index];
+      cursor.index += 1;
+      const right = term();
+      value = operator === "+" ? value + right : value - right;
+    }
+    return value;
+  }
+
+  const result = expr();
+  if (cursor.index !== tokens.length) throw new Error("Tokens extra no permitidos.");
+  return result;
+}
+
+function calculator(expression: string): string {
+  try {
+    return String(evaluateExpression(expression));
+  } catch (error) {
+    return `Expresión rechazada: ${error instanceof Error ? error.message : "input inválido"}`;
+  }
+}
+
+function sendError(reply: FastifyReply, error: unknown) {
+  const message = error instanceof Error ? error.message : "Error inesperado.";
+  return reply.code(500).send({ error: message });
+}
+
+const server = Fastify({ logger: true });
+
+server.get("/", async (_request, reply) => reply.type("text/html").send(indexHtml));
+server.get("/health", async () => ({ status: "ok" }));
+
+server.post("/api/chat", async (request, reply) => {
+  try {
+    const payload = ChatRequest.parse(request.body);
+    const response = await createClient().messages.create({
+      model: MODEL,
+      max_tokens: 700,
+      messages: [{ role: "user", content: payload.message }],
+    });
+    return { reply: responseText(response.content) };
+  } catch (error) {
+    return sendError(reply, error);
+  }
+});
+
+server.post("/api/extract", async (request, reply) => {
+  try {
+    const payload = ExtractRequest.parse(request.body);
+    const response = await createClient().messages.create({
+      model: MODEL,
+      max_tokens: 700,
+      system: invoicePrompt,
+      messages: [{ role: "user", content: payload.text }],
+    });
+    return { data: InvoiceData.parse(JSON.parse(responseText(response.content))) };
+  } catch (error) {
+    return sendError(reply, error);
+  }
+});
+
+server.post("/api/agent", async (request, reply) => {
+  try {
+    const payload = AgentRequest.parse(request.body);
+    const client = createClient();
+    const messages: MessageParam[] = [{ role: "user", content: payload.question }];
+    const steps: string[] = [];
+
+    for (let step = 0; step < MAX_AGENT_STEPS; step += 1) {
+      const response = await client.messages.create({
+        model: MODEL,
+        max_tokens: 700,
+        tools: [calculatorTool],
+        messages,
+      });
+      messages.push({ role: "assistant", content: response.content });
+      const toolResults: ToolResultBlockParam[] = [];
+
+      for (const block of response.content) {
+        if (block.type === "tool_use" && block.name === "calculator") {
+          const parsed = CalculatorInput.safeParse(block.input);
+          const expression = parsed.success ? parsed.data.expression : "";
+          const result = calculator(expression);
+          steps.push(`calculator(${expression}) -> ${result}`);
+          toolResults.push({ type: "tool_result", tool_use_id: block.id, content: result });
+        }
+      }
+
+      if (toolResults.length === 0) {
+        return { answer: responseText(response.content), steps };
+      }
+      messages.push({ role: "user", content: toolResults });
+    }
+
+    return reply.code(504).send({ error: "El agente alcanzó el límite de pasos." });
+  } catch (error) {
+    return sendError(reply, error);
+  }
+});
+
+await server.listen({ port: Number(process.env.PORT ?? 3000), host: "0.0.0.0" });
+    '''
 }
 
 
@@ -1854,6 +2634,25 @@ await server.listen({ port: Number(process.env.PORT ?? 3000), host: "0.0.0.0" })
 
 
 TS_EXTRA_FILES = {
+    'typescript/clase-17/README.md': '''
+# Clase 17: Frontend + hub de proyectos con Fastify
+
+**Objetivo:** mostrar la alternativa TypeScript del hub web: un frontend servido por Fastify y endpoints para chatbot, extracción JSON y agente con herramientas.
+
+## Estructura
+
+- `inicio/`: punto de partida con servidor Fastify mínimo y TODOs.
+- `final/`: solución con frontend HTML/CSS/JS embebido y endpoints `/api/chat`, `/api/extract` y `/api/agent`.
+
+## Ejecución local
+
+```bash
+export ANTHROPIC_API_KEY="tu_api_key"
+npm run clase:17:final
+```
+
+Abre `http://127.0.0.1:3000` para probar la versión TypeScript desde el navegador.
+    ''',
     'typescript/clase-16/README.md': '''
 # Clase 16: Deploy tu app con Fastify + Railway
 
@@ -1918,8 +2717,8 @@ def build_root_files() -> None:
 
     Repositorio para el curso **Construyendo aplicaciones con Claude API**.
 
-    - 16 clases.
-    - 2 proyectos.
+    - 17 clases.
+    - 3 proyectos.
     - Ruta principal en Python.
     - Ruta alternativa en TypeScript con ejemplos equivalentes.
     - Cada clase incluye carpeta `inicio` y `final` para enseñar con checkpoints claros.
@@ -1942,7 +2741,7 @@ def build_root_files() -> None:
     ## Ramas por clase (estilo Platzi)
 
     Además de las carpetas, cada clase se publica como una **rama aislada**: al hacer
-    checkout solo verás el contenido de esa clase (Python y TypeScript), no las 16.
+    checkout solo verás el contenido de esa clase (Python y TypeScript), no las 17.
 
     - `clase-XX-inicio`: punto de partida para resolver en vivo.
     - `clase-XX-final`: solución completa de la clase.
@@ -2077,13 +2876,14 @@ def build_root_files() -> None:
     | 14 | Batch API para miles de requests |
     | 15 | Rate limits, reintentos y observabilidad |
     | 16 | Proyecto final: FastAPI + Railway |
+    | 17 | Frontend + hub de proyectos con FastAPI |
     ''')
     write(".env.example", '''
     # Copia este archivo a .env o exporta la variable en tu terminal.
     # No subas API keys reales al repositorio.
     ANTHROPIC_API_KEY=tu_api_key_de_anthropic
 
-    # Clase 16 / Railway puede usar PORT automáticamente.
+    # Clases 16 y 17 pueden usar PORT automáticamente.
     PORT=8000
     ''')
     write(".gitignore", '''
@@ -2223,7 +3023,7 @@ def build_classes() -> None:
         slug = f"clase-{number:02d}"
         source = SOURCE_NUMBER[number]
         write(f"python/{slug}/README.md", class_readme("python", number, title, objective))
-        write(f"python/{slug}/inicio/main.py", py_starter(number, title))
+        write(f"python/{slug}/inicio/main.py", PY_STARTERS.get(number, py_starter(number, title)))
         write(f"python/{slug}/final/main.py", PY_FINALS[source])
 
         for relative_path, content in PY_EXTRA_FILES.items():
@@ -2231,7 +3031,7 @@ def build_classes() -> None:
                 write(relative_path, content)
 
         write(f"typescript/{slug}/README.md", class_readme("typescript", number, title, objective))
-        write(f"typescript/{slug}/inicio/main.ts", ts_starter(number, title))
+        write(f"typescript/{slug}/inicio/main.ts", TS_STARTERS.get(number, ts_starter(number, title)))
         write(f"typescript/{slug}/final/main.ts", TS_FINALS[source])
 
         for relative_path, content in TS_EXTRA_FILES.items():
