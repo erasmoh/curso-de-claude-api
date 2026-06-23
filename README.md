@@ -1,13 +1,13 @@
-# Curso de Claude API — Clase 15: Frontend + hub de proyectos con FastAPI
+# Curso de Claude API — Clase 16: Frontend + hub de proyectos con FastAPI
 
-Esta rama es el checkpoint **final** de la clase 15.
+Esta rama es el checkpoint **final** de la clase 16.
 
 Solución completa y comentada de la clase.
 
 ## Contenido de esta rama
 
-- `python/clase-15/final/main.py` — versión Python (ruta principal).
-- `typescript/clase-15/final/main.ts` — versión TypeScript (ruta alternativa).
+- `python/clase-16/final/main.py` — versión Python (ruta principal).
+- `typescript/clase-16/final/main.ts` — versión TypeScript (ruta alternativa).
 
 ## Cómo ejecutar
 
@@ -21,14 +21,14 @@ export ANTHROPIC_API_KEY="tu_api_key"
 Python (desde la carpeta de la clase; es una app FastAPI, se sirve con `uvicorn`):
 
 ```bash
-cd python/clase-15
+cd python/clase-16
 uvicorn --app-dir final main:app --reload
 ```
 
 TypeScript (desde la raíz del repositorio):
 
 ```bash
-cd typescript && npm install && npm run clase:15:final
+cd typescript && npm install && npm run clase:16:final
 ```
 
 ## Navegación del curso

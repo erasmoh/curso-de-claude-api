@@ -58,12 +58,12 @@ python final/main.py
 python inicio/main.py
 ```
 
-## Ejecutar la clase 15 (frontend + FastAPI)
+## Ejecutar la clase 16 (frontend + FastAPI)
 
-La clase 15 es una app web servida con FastAPI, así que se levanta con `uvicorn`:
+La clase 16 es una app web servida con FastAPI, así que se levanta con `uvicorn`:
 
 ```bash
-# (estando dentro de python/clase-15)
+# (estando dentro de python/clase-16)
 uvicorn --app-dir final main:app --reload
 ```
 
