@@ -1,22 +1,25 @@
-# Clase 15: Rate limits, reintentos y observabilidad
+# Clase 15: Frontend + hub de proyectos con FastAPI
 
-**Objetivo:** Aplicar backoff, logs estructurados y métricas de tokens.
+**Objetivo:** convertir los proyectos clave del curso en una sola aplicación web: un frontend servido por FastAPI y tres endpoints para chatbot, extracción JSON y agente con herramientas.
 
 ## Estructura
 
-- `inicio/`: punto de partida para resolver durante la clase.
-- `final/`: solución comentada y lista para comparar.
+- `inicio/`: punto de partida que conserva la solución de la clase 14 (Batch API) como referencia y suma una app FastAPI mínima con `/health`, `/` y TODOs para completar los endpoints.
+- `final/`: solución con frontend HTML/CSS/JS embebido y endpoints `/api/chat`, `/api/extract` y `/api/agent`.
 
-## Ejecución sugerida
+## Ejecución local
 
 ```bash
-cp .env.example .env
 export ANTHROPIC_API_KEY="tu_api_key"
-python python/clase-15/final/main.py
+uvicorn --app-dir python/clase-15/final main:app --reload
 ```
 
-## Nota docente
+Abre `http://127.0.0.1:8000` para probar los tres proyectos desde el navegador.
 
-Recorre primero `inicio/main.py` y deja que el estudiante complete los TODOs.
-Después compara contra `final/main.py` para discutir decisiones de diseño,
-manejo de errores y seguridad.
+## Guion sugerido
+
+1. Mostrar el frontend estático servido por FastAPI.
+2. Conectar el formulario del chatbot con `fetch('/api/chat')`.
+3. Reutilizar el extractor de facturas de la clase 07 en `/api/extract`.
+4. Reutilizar el agente con calculadora de la clase 11 en `/api/agent`.
+5. Explicar por qué el frontend nunca debe llamar a Claude API directamente con la API key.

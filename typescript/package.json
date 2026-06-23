@@ -34,11 +34,7 @@
 "clase:14:final": "tsx clase-14/final/main.ts",
 "clase:14:inicio": "tsx clase-14/inicio/main.ts",
 "clase:15:final": "tsx clase-15/final/main.ts",
-"clase:15:inicio": "tsx clase-15/inicio/main.ts",
-"clase:16:final": "tsx clase-16/final/main.ts",
-"clase:16:inicio": "tsx clase-16/inicio/main.ts",
-"clase:17:final": "tsx clase-17/final/main.ts",
-"clase:17:inicio": "tsx clase-17/inicio/main.ts"
+"clase:15:inicio": "tsx clase-15/inicio/main.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.54.0",

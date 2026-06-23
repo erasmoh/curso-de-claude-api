@@ -1,22 +1,17 @@
-# Clase 15: Rate limits, reintentos y observabilidad
+# Clase 15: Frontend + hub de proyectos con Fastify
 
-**Objetivo:** Aplicar backoff, logs estructurados y métricas de tokens.
+**Objetivo:** mostrar la alternativa TypeScript del hub web: un frontend servido por Fastify y endpoints para chatbot, extracción JSON y agente con herramientas.
 
 ## Estructura
 
-- `inicio/`: punto de partida para resolver durante la clase.
-- `final/`: solución comentada y lista para comparar.
+- `inicio/`: punto de partida que conserva la solución de la clase 14 (Batch API) como referencia y suma un servidor Fastify mínimo con TODOs.
+- `final/`: solución con frontend HTML/CSS/JS embebido y endpoints `/api/chat`, `/api/extract` y `/api/agent`.
 
-## Ejecución sugerida
+## Ejecución local
 
 ```bash
-cp .env.example .env
 export ANTHROPIC_API_KEY="tu_api_key"
-npm --prefix typescript run clase:15:final
+npm run clase:15:final
 ```
 
-## Nota docente
-
-Recorre primero `inicio/main.ts` y deja que el estudiante complete los TODOs.
-Después compara contra `final/main.ts` para discutir decisiones de diseño,
-manejo de errores y seguridad.
+Abre `http://127.0.0.1:3000` para probar la versión TypeScript desde el navegador.

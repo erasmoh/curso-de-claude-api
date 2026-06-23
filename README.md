@@ -2,7 +2,7 @@
 
 Repositorio para el curso **Construyendo aplicaciones con Claude API**.
 
-- 17 clases.
+- 15 clases.
 - 3 proyectos.
 - Ruta principal en Python.
 - Ruta alternativa en TypeScript con ejemplos equivalentes.
@@ -159,6 +159,4 @@ npm run typecheck
 | 12 | Manejo de errores y seguridad en agentes |
 | 13 | Prompt caching: reduce costos |
 | 14 | Batch API para miles de requests |
-| 15 | Rate limits, reintentos y observabilidad |
-| 16 | Proyecto final: FastAPI + Railway |
-| 17 | Frontend + hub de proyectos con FastAPI |
+| 15 | Proyecto final: frontend + hub con FastAPI |

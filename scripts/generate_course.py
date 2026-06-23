@@ -22,9 +22,7 @@ CLASSES = [
     (12, "Manejo de errores y seguridad en agentes", "Limitar pasos, validar inputs y evitar loops peligrosos."),
     (13, "Prompt caching: reduce costos hasta un 90%", "Marcar contenido reusable con cache_control."),
     (14, "Batch API para procesar miles de requests", "Crear batches, consultar estado y leer resultados."),
-    (15, "Rate limits, reintentos y observabilidad", "Aplicar backoff, logs estructurados y métricas de tokens."),
-    (16, "Deploy tu app con FastAPI + Railway", "Exponer el chatbot como API REST lista para Railway."),
-    (17, "Frontend + hub de proyectos con FastAPI", "Servir un frontend y reunir chatbot, extracción JSON y agente en una sola app."),
+    (15, "Frontend + hub de proyectos con FastAPI", "Servir un frontend y reunir chatbot, extracción JSON y agente en una sola app."),
 ]
 
 
@@ -32,12 +30,14 @@ CLASSES = [
 # se definió el contenido en PY_FINALS / TS_FINALS / *_EXTRA_FILES. Este mapa
 # traduce "número de clase actual" -> "número de contenido original".
 # Se retiraron del curso el antiguo 9 ("extractor de facturas en PDF") y el
-# antiguo 14 ("agente de búsqueda y resumen web"); el resto se recorrió para
-# quedar contiguo (01..16).
+# antiguo 14 ("agente de búsqueda y resumen web"). Las antiguas clases 15
+# ("rate limits", contenido 17) y 16 ("deploy con Railway", contenido 18) se
+# reemplazaron por la clase final de frontend (contenido 19); el resto quedó
+# contiguo (01..15).
 SOURCE_NUMBER = {
     1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8,
     9: 10, 10: 11, 11: 12, 12: 13,
-    13: 15, 14: 16, 15: 17, 16: 18, 17: 19,
+    13: 15, 14: 16, 15: 19,
 }
 
 
@@ -112,18 +112,64 @@ def ts_starter(number: int, title: str) -> str:
 
 
 PY_STARTERS = {
-    17: '''
-"""Clase 17 - inicio: Frontend y hub de proyectos con FastAPI.
+    15: '''
+"""Clase 15 - inicio: Frontend + hub de proyectos con FastAPI.
 
-Punto de partida para convertir los proyectos del curso en una sola app web.
-Ejecuta con: uvicorn --app-dir python/clase-17/inicio main:app --reload
+Punto de partida que combina dos cosas:
+1. Lo último de la clase 14 (Batch API) como referencia para continuidad.
+2. El esqueleto del hub web que completaremos en vivo durante la clase.
+
+Ejecuta el frontend con:
+    uvicorn --app-dir python/clase-15/inicio main:app --reload
 """
 
+import os
+
+from anthropic import Anthropic
+from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
+from anthropic.types.messages.batch_create_params import Request
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 MODEL = "claude-sonnet-4-6"
+
+
+# =========================================================================
+# Parte 1 - Lo último de la clase 14: Batch API (referencia de continuidad)
+# =========================================================================
+def demo_batch() -> None:
+    """Crear un batch, consultar estado y leer resultados (solución clase 14)."""
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise RuntimeError("Define ANTHROPIC_API_KEY.")
+
+    client = Anthropic(api_key=api_key)
+    batch = client.messages.batches.create(requests=[
+        Request(
+            custom_id="invoice-001",
+            params=MessageCreateParamsNonStreaming(
+                model=MODEL,
+                max_tokens=500,
+                messages=[{"role": "user", "content": "Resume esta factura de ejemplo."}],
+            ),
+        )
+    ])
+    print(batch.id, batch.processing_status)
+
+    batch_status = client.messages.batches.retrieve(batch.id)
+    print(batch_status.processing_status)
+
+    if batch_status.processing_status == "ended":
+        for result in client.messages.batches.results(batch.id):
+            print(result.custom_id, result.result.type)
+    else:
+        print("El batch todavía no termina. Vuelve a consultar más tarde antes de leer results.")
+
+
+# =========================================================================
+# Parte 2 - Nuevo: esqueleto del hub frontend (a completar durante la clase)
+# =========================================================================
 app = FastAPI(title="Claude API Hub")
 
 
@@ -167,8 +213,8 @@ def chat(payload: ChatRequest) -> dict[str, str]:
     return {"reply": f"TODO: conectar Claude para: {payload.message}"}
 
 
-# TODO 4: agrega /api/extract para el proyecto de JSON estructurado.
-# TODO 5: agrega /api/agent para el proyecto de tool use + calculadora.
+# TODO 4: agrega /api/extract para el proyecto de JSON estructurado (clase 07).
+# TODO 5: agrega /api/agent para el proyecto de tool use + calculadora (clase 11).
 # TODO 6: conecta los formularios del frontend con fetch().
     ''',
 }
@@ -993,117 +1039,6 @@ def main() -> None:
 if __name__ == "__main__":
     main()
     ''',
-    17: '''
-"""Rate limits, reintentos con jitter y observabilidad mínima."""
-
-from __future__ import annotations
-
-import json
-import os
-import random
-import time
-from collections.abc import Callable
-from typing import TypeVar
-from anthropic import Anthropic
-from anthropic.types import Message
-
-MODEL = "claude-sonnet-4-6"
-T = TypeVar("T")
-
-
-def retry_with_backoff(fn: Callable[[], T], max_retries: int = 5) -> T:
-    for attempt in range(max_retries):
-        try:
-            return fn()
-        except Exception as error:
-            wait = (2 ** attempt) + random.random()
-            print(f"Error: {error}. Reintentando en {wait:.2f}s")
-            time.sleep(wait)
-    raise RuntimeError("Se agotaron los reintentos")
-
-
-def safe_claude_call(client: Anthropic, **kwargs: object) -> Message:
-    start = time.perf_counter()
-
-    def call() -> Message:
-        return client.messages.create(**kwargs)
-
-    response = retry_with_backoff(call)
-    elapsed_ms = round((time.perf_counter() - start) * 1000)
-    print(json.dumps({
-        "model": response.model,
-        "input_tokens": response.usage.input_tokens,
-        "output_tokens": response.usage.output_tokens,
-        "elapsed_ms": elapsed_ms,
-        "status": "success",
-    }, ensure_ascii=False))
-    return response
-
-
-def main() -> None:
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError("Define ANTHROPIC_API_KEY.")
-
-    client = Anthropic(api_key=api_key)
-    response = safe_claude_call(
-        client,
-        model=MODEL,
-        max_tokens=200,
-        messages=[{"role": "user", "content": "Dame un tip de observabilidad."}],
-    )
-    print("".join(block.text for block in response.content if block.type == "text"))
-
-
-if __name__ == "__main__":
-    main()
-    ''',
-    18: '''
-"""API REST con FastAPI, API key de app y variables listas para Railway."""
-
-import os
-from anthropic import Anthropic
-from fastapi import FastAPI, Header, HTTPException
-from pydantic import BaseModel
-
-MODEL = "claude-sonnet-4-6"
-app = FastAPI(title="Curso Claude API")
-APP_API_KEY = os.getenv("APP_API_KEY")
-
-
-class ChatRequest(BaseModel):
-    message: str
-
-
-class ChatResponse(BaseModel):
-    reply: str
-
-
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@app.post("/chat", response_model=ChatResponse)
-def chat(payload: ChatRequest, x_api_key: str = Header(default="")) -> ChatResponse:
-    if not APP_API_KEY:
-        raise HTTPException(status_code=500, detail="APP_API_KEY no configurada.")
-    if x_api_key != APP_API_KEY:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY no configurada.")
-
-    client = Anthropic(api_key=api_key)
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=600,
-        messages=[{"role": "user", "content": payload.message}],
-    )
-    reply = "".join(block.text for block in response.content if block.type == "text")
-    return ChatResponse(reply=reply)
-    ''',
     19: '''
 """App FastAPI con frontend y tres mini-proyectos del curso en un solo hub."""
 
@@ -1486,21 +1421,21 @@ def agent(payload: AgentRequest) -> AgentResponse:
 
 
 PY_EXTRA_FILES = {
-    'python/clase-17/README.md': '''
-# Clase 17: Frontend + hub de proyectos con FastAPI
+    'python/clase-15/README.md': '''
+# Clase 15: Frontend + hub de proyectos con FastAPI
 
 **Objetivo:** convertir los proyectos clave del curso en una sola aplicación web: un frontend servido por FastAPI y tres endpoints para chatbot, extracción JSON y agente con herramientas.
 
 ## Estructura
 
-- `inicio/`: punto de partida con una app FastAPI mínima, `/health`, `/` y TODOs para completar los endpoints.
+- `inicio/`: punto de partida que conserva la solución de la clase 14 (Batch API) como referencia y suma una app FastAPI mínima con `/health`, `/` y TODOs para completar los endpoints.
 - `final/`: solución con frontend HTML/CSS/JS embebido y endpoints `/api/chat`, `/api/extract` y `/api/agent`.
 
 ## Ejecución local
 
 ```bash
 export ANTHROPIC_API_KEY="tu_api_key"
-uvicorn --app-dir python/clase-17/final main:app --reload
+uvicorn --app-dir python/clase-15/final main:app --reload
 ```
 
 Abre `http://127.0.0.1:8000` para probar los tres proyectos desde el navegador.
@@ -1513,45 +1448,63 @@ Abre `http://127.0.0.1:8000` para probar los tres proyectos desde el navegador.
 4. Reutilizar el agente con calculadora de la clase 11 en `/api/agent`.
 5. Explicar por qué el frontend nunca debe llamar a Claude API directamente con la API key.
     ''',
-    'python/clase-16/README.md': '''
-# Clase 16: Deploy tu app con FastAPI + Railway
-
-**Objetivo:** envolver el chatbot en una API REST con FastAPI, añadir autenticación básica y desplegar en Railway con variables de entorno seguras.
-
-## Estructura
-
-- `inicio/`: punto de partida para resolver durante la clase.
-- `final/`: solución con `/health`, `/chat`, header `x-api-key` y `APP_API_KEY`.
-
-## Ejecución local
-
-```bash
-export ANTHROPIC_API_KEY="tu_api_key"
-export APP_API_KEY="clave_para_tu_app"
-uvicorn python.clase-16.final.main:app --reload
-```
-
-## Railway
-
-Configura `ANTHROPIC_API_KEY`, `APP_API_KEY` y `PORT` como variables de entorno.
-El comando de inicio sugerido es `uvicorn python.clase-16.final.main:app --host 0.0.0.0 --port $PORT`.
-    ''',
 }
 
 
 TS_STARTERS = {
-    17: '''
+    15: '''
 /**
- * Clase 17 - inicio: Frontend y hub de proyectos con Fastify.
+ * Clase 15 - inicio: Frontend + hub de proyectos con Fastify.
  *
- * Adaptación TypeScript del hub web. Ejecuta con npm run clase:17:inicio.
+ * Punto de partida que combina dos cosas:
+ * 1. Lo último de la clase 14 (Batch API) como referencia para continuidad.
+ * 2. El esqueleto del hub web que completaremos en vivo durante la clase.
+ *
+ * Ejecuta el frontend con: npm run clase:15:inicio
  */
 
+import Anthropic from "@anthropic-ai/sdk";
 import Fastify from "fastify";
 import { z } from "zod";
 
 export {};
 
+const MODEL = "claude-sonnet-4-6";
+
+// ===== Parte 1: Lo último de la clase 14 (Batch API) - referencia =====
+async function demoBatch(): Promise<void> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");
+
+  const client = new Anthropic({ apiKey });
+  const batch = await client.messages.batches.create({
+    requests: [{
+      custom_id: "invoice-001",
+      params: {
+        model: MODEL,
+        max_tokens: 500,
+        messages: [{ role: "user", content: "Resume esta factura de ejemplo." }],
+      },
+    }],
+  });
+
+  console.log(batch.id, batch.processing_status);
+  const batchStatus = await client.messages.batches.retrieve(batch.id);
+  console.log(batchStatus.processing_status);
+
+  if (batchStatus.processing_status === "ended") {
+    const results = await client.messages.batches.results(batch.id);
+    for await (const result of results) {
+      console.log(result.custom_id, result.result.type);
+    }
+  } else {
+    console.log("El batch todavía no termina. Vuelve a consultar más tarde antes de leer results.");
+  }
+}
+
+void demoBatch;
+
+// ===== Parte 2: Nuevo - esqueleto del hub frontend (a completar en vivo) =====
 const ChatRequest = z.object({ message: z.string().min(1) });
 const server = Fastify({ logger: true });
 
@@ -1574,6 +1527,7 @@ server.post("/api/chat", async (request) => {
   return { reply: `TODO: conectar Claude para: ${payload.message}` };
 });
 
+// TODO: agrega /api/extract (clase 07) y /api/agent (clase 11).
 await server.listen({ port: Number(process.env.PORT ?? 3000), host: "0.0.0.0" });
     ''',
 }
@@ -2263,86 +2217,6 @@ if (batchStatus.processing_status === "ended") {
   console.log("El batch todavía no termina. Vuelve a consultar más tarde antes de leer results.");
 }
     ''',
-    17: '''
-import Anthropic from "@anthropic-ai/sdk";
-import type { Message } from "@anthropic-ai/sdk/resources/messages";
-
-export {};
-
-const MODEL = "claude-sonnet-4-6";
-
-async function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
-  for (let attempt = 0; attempt < maxRetries; attempt += 1) {
-    try {
-      return await fn();
-    } catch (error) {
-      const waitMs = (2 ** attempt + Math.random()) * 1000;
-      console.log(`Error: ${error}. Reintentando en ${(waitMs / 1000).toFixed(2)}s`);
-      await new Promise((resolve) => setTimeout(resolve, waitMs));
-    }
-  }
-  throw new Error("Se agotaron los reintentos");
-}
-
-async function safeClaudeCall(client: Anthropic): Promise<Message> {
-  const start = performance.now();
-  const response = await retryWithBackoff(() => client.messages.create({
-    model: MODEL,
-    max_tokens: 200,
-    messages: [{ role: "user", content: "Dame un tip de observabilidad." }],
-  }));
-  console.log(JSON.stringify({
-    model: response.model,
-    input_tokens: response.usage.input_tokens,
-    output_tokens: response.usage.output_tokens,
-    elapsed_ms: Math.round(performance.now() - start),
-    status: "success",
-  }));
-  return response;
-}
-
-const apiKey = process.env.ANTHROPIC_API_KEY;
-if (!apiKey) throw new Error("Define ANTHROPIC_API_KEY.");
-
-const response = await safeClaudeCall(new Anthropic({ apiKey }));
-console.log(response.content.filter((block) => block.type === "text").map((block) => block.text).join(""));
-    ''',
-    18: '''
-import Anthropic from "@anthropic-ai/sdk";
-import Fastify from "fastify";
-import { z } from "zod";
-
-export {};
-
-const MODEL = "claude-sonnet-4-6";
-const APP_API_KEY = process.env.APP_API_KEY;
-const ChatRequest = z.object({ message: z.string().min(1) });
-const server = Fastify({ logger: true });
-
-server.get("/health", async () => ({ status: "ok" }));
-
-server.post("/chat", async (request, reply) => {
-  if (!APP_API_KEY) return reply.code(500).send({ error: "APP_API_KEY no configurada." });
-  if (request.headers["x-api-key"] !== APP_API_KEY) {
-    return reply.code(401).send({ error: "Unauthorized" });
-  }
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return reply.code(500).send({ error: "ANTHROPIC_API_KEY no configurada." });
-
-  const payload = ChatRequest.parse(request.body);
-  const client = new Anthropic({ apiKey });
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 600,
-    messages: [{ role: "user", content: payload.message }],
-  });
-  const replyText = response.content.filter((block) => block.type === "text").map((block) => block.text).join("");
-  return { reply: replyText };
-});
-
-await server.listen({ port: Number(process.env.PORT ?? 3000), host: "0.0.0.0" });
-    ''',
     19: '''
 import Anthropic from "@anthropic-ai/sdk";
 import type { MessageParam, ToolResultBlockParam, ToolUnion } from "@anthropic-ai/sdk/resources/messages";
@@ -2634,47 +2508,24 @@ await server.listen({ port: Number(process.env.PORT ?? 3000), host: "0.0.0.0" })
 
 
 TS_EXTRA_FILES = {
-    'typescript/clase-17/README.md': '''
-# Clase 17: Frontend + hub de proyectos con Fastify
+    'typescript/clase-15/README.md': '''
+# Clase 15: Frontend + hub de proyectos con Fastify
 
 **Objetivo:** mostrar la alternativa TypeScript del hub web: un frontend servido por Fastify y endpoints para chatbot, extracción JSON y agente con herramientas.
 
 ## Estructura
 
-- `inicio/`: punto de partida con servidor Fastify mínimo y TODOs.
+- `inicio/`: punto de partida que conserva la solución de la clase 14 (Batch API) como referencia y suma un servidor Fastify mínimo con TODOs.
 - `final/`: solución con frontend HTML/CSS/JS embebido y endpoints `/api/chat`, `/api/extract` y `/api/agent`.
 
 ## Ejecución local
 
 ```bash
 export ANTHROPIC_API_KEY="tu_api_key"
-npm run clase:17:final
+npm run clase:15:final
 ```
 
 Abre `http://127.0.0.1:3000` para probar la versión TypeScript desde el navegador.
-    ''',
-    'typescript/clase-16/README.md': '''
-# Clase 16: Deploy tu app con Fastify + Railway
-
-**Objetivo:** mostrar la alternativa TypeScript de la API REST final con autenticación básica y variables seguras.
-
-## Estructura
-
-- `inicio/`: punto de partida para resolver durante la clase.
-- `final/`: solución con `/health`, `/chat`, header `x-api-key` y `APP_API_KEY`.
-
-## Ejecución local
-
-```bash
-export ANTHROPIC_API_KEY="tu_api_key"
-export APP_API_KEY="clave_para_tu_app"
-npm run clase:16:final
-```
-
-## Railway
-
-Configura `ANTHROPIC_API_KEY`, `APP_API_KEY` y `PORT` como variables de entorno.
-El comando de inicio puede usar el script de esta clase o un entrypoint dedicado para producción.
     ''',
 }
 
@@ -2717,7 +2568,7 @@ def build_root_files() -> None:
 
     Repositorio para el curso **Construyendo aplicaciones con Claude API**.
 
-    - 17 clases.
+    - 15 clases.
     - 3 proyectos.
     - Ruta principal en Python.
     - Ruta alternativa en TypeScript con ejemplos equivalentes.
@@ -2874,16 +2725,14 @@ def build_root_files() -> None:
     | 12 | Manejo de errores y seguridad en agentes |
     | 13 | Prompt caching: reduce costos |
     | 14 | Batch API para miles de requests |
-    | 15 | Rate limits, reintentos y observabilidad |
-    | 16 | Proyecto final: FastAPI + Railway |
-    | 17 | Frontend + hub de proyectos con FastAPI |
+    | 15 | Proyecto final: frontend + hub con FastAPI |
     ''')
     write(".env.example", '''
     # Copia este archivo a .env o exporta la variable en tu terminal.
     # No subas API keys reales al repositorio.
     ANTHROPIC_API_KEY=tu_api_key_de_anthropic
 
-    # Clases 16 y 17 pueden usar PORT automáticamente.
+    # La clase 15 (frontend con FastAPI) puede usar PORT automáticamente.
     PORT=8000
     ''')
     write(".gitignore", '''
